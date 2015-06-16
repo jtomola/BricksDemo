@@ -1,6 +1,8 @@
 #include "D3DHeader.h"
 #include "Demo.h"
 #include <stdio.h>
+#include "Vect.h"
+#include "Matrix.h"
 
 // Callback needed to handle Window messages
 LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

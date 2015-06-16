@@ -69,10 +69,14 @@
   <ItemGroup>
     <ClInclude Include="D3DHeader.h" />
     <ClInclude Include="Demo.h" />
+    <ClInclude Include="Matrix.h" />
+    <ClInclude Include="Vect.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Demo.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Matrix.cpp" />
+    <ClCompile Include="Vect.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

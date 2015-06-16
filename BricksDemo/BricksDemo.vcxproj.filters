@@ -13,12 +13,24 @@
     <ClInclude Include="Demo.h">
       <Filter>Files</Filter>
     </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Vect.h">
+      <Filter>Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Files</Filter>
     </ClCompile>
     <ClCompile Include="Demo.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Vect.cpp">
       <Filter>Files</Filter>
     </ClCompile>
   </ItemGroup>
