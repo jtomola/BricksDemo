@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "Vect.h"
 #include "Matrix.h"
+#include "Camera.h"
 
 // Callback needed to handle Window messages
 LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -82,6 +83,12 @@ void Demo::Draw()
 // Run the demo
 void Demo::Run()
 {
+	Camera cam;
+	cam.setViewport(0, 0, GAME_WIDTH, GAME_HEIGHT);
+	cam.setPerspective(35.0f, float(GAME_WIDTH) / float(GAME_HEIGHT), 1.0f, 4500.0f);
+	cam.setOrientAndPosition(Vect(0.0f, 1.0f, 0.0f), Vect(0.0f, 0.0f, -10.0f), Vect(0.0f, 0.0f, 300.0f));
+	cam.updateCamera();
+
 	// Get the instance
 	Demo *p = Demo::privGetInstance();
 

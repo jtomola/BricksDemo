@@ -1,6 +1,8 @@
 #ifndef MATH_VECT_H
 #define MATH_VECT_H
 
+#define MATH_PI 3.1415926535f
+
 class Matrix;
 
 class Vect

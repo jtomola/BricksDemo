@@ -72,7 +72,7 @@ void Matrix::setScale(const float xScale, const float yScale, const float zScale
     this->_m15 = 1.0f;
 }
 
-void Matrix::setRot(const float rotxIn, const float rotyIn, const float rotzIn)
+void Matrix::setRotXYZ(const float rotxIn, const float rotyIn, const float rotzIn)
 {
 	// Set up matrices for rotating aroudnd x, y, and z axes
 	Matrix rotX, rotY, rotZ;
@@ -99,6 +99,41 @@ void Matrix::setRot(const float rotxIn, const float rotyIn, const float rotzIn)
 	rotZ._m5 = rotZ._m0;
 
 	*this *= rotX * rotY * rotZ;
+};
+
+void Matrix::setRotAxisAngle(const Vect& axisIn, const float angleIn)
+{
+	const Vect vectNorm = axisIn.getNorm();
+
+	const float cosine = cosf(angleIn);
+	const float sine = sinf(angleIn);
+	const float uIn = vectNorm[0];
+	const float vIn = vectNorm[1];
+	const float wIn = vectNorm[2];
+
+	const float uSQ = uIn * uIn;
+	const float vSQ = vIn * vIn;
+	const float wSQ = wIn * wIn;
+
+	this->_m0 = cosine + (1 - cosine) * uSQ;
+	this->_m1 = (1 - cosine) * uIn * vIn + sine * wIn;
+	this->_m2 = (1 - cosine) * uIn * wIn - sine * vIn;
+	this->_m3 = 0.0f;
+
+	this->_m4 = (1 - cosine) * uIn * vIn - sine * wIn;
+	this->_m5 = cosine + (1 - cosine) * vSQ;
+	this->_m6 = (1 - cosine) * vIn * wIn + sine * uIn;
+	this->_m7 = 0.0f;
+
+	this->_m8 = (1 - cosine) * uIn * wIn + sine * vIn;
+	this->_m9 = (1 - cosine) * vIn * wIn - sine * uIn;
+	this->_m10 = cosine + (1 - cosine) * wSQ;
+	this->_m11 = 0.0f;
+
+	this->_m12 = 0.0f;
+	this->_m13 = 0.0f;
+	this->_m14 = 0.0f;
+	this->_m15 = 1.0f;
 };
 
 void Matrix::setRow(const int indexIn, const Vect& vectIn)

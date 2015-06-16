@@ -19,6 +19,9 @@
     <ClInclude Include="Vect.h">
       <Filter>Files</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -31,6 +34,9 @@
       <Filter>Files</Filter>
     </ClCompile>
     <ClCompile Include="Vect.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
       <Filter>Files</Filter>
     </ClCompile>
   </ItemGroup>
