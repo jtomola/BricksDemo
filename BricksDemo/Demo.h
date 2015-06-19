@@ -31,6 +31,8 @@ private:
 	HWND privCreateGraphicsWindow(HINSTANCE hInstance, int nCmdShow, const char* windowName, const int Width, const int Height);
 	void privInitDevice();
 	void privShutDownDevice();
+	void privCreateShader();
+	void privDestroyShader();
 
 	HWND						window;
 	IDXGISwapChain*				swapChain;
@@ -39,6 +41,13 @@ private:
 	ID3D11RenderTargetView*		backBufferView;
 	ID3D11Texture2D*			depthTexture;
 	ID3D11DepthStencilView*		depthView;
+
+	// Shader Info
+	ID3D11VertexShader*			vShader;
+	ID3D11PixelShader*			pShader;
+	ID3D11InputLayout*			inputLayout;
+	ID3D11RasterizerState*		rastState;
+
 	bool running;
 };
 

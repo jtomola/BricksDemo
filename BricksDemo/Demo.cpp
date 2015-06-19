@@ -11,7 +11,9 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 // Constructor
 Demo::Demo()
 	:	window(0), swapChain(0), device(0), deviceCon(0),
-		backBufferView(0), depthTexture(0), depthView(0), running(0)
+		backBufferView(0), depthTexture(0), depthView(0),
+		vShader(0), pShader(0), inputLayout(0), rastState(0),
+		running(0)
 {
 };
 
@@ -57,6 +59,7 @@ void Demo::Initialize(HINSTANCE hInstance, int nCmdShow)
 
 	// Initialize Direct3D
 	pDemo->privInitDevice();
+	pDemo->privCreateShader();
 };
 
 void Demo::Update()
@@ -122,7 +125,7 @@ void Demo::Run()
 		}
 	}
 
-	// unload content (resources loaded above)
+	p->privDestroyShader();
 	p->privShutDownDevice();
 };
 
@@ -350,3 +353,124 @@ void Demo::privShutDownDevice()
 	if (device) device->Release(); device = 0;
 	if (deviceCon) deviceCon->Release(); deviceCon = 0;
 };
+
+void Demo::privCreateShader()
+{
+	ID3DBlob* vShaderBlob = 0;
+	ID3DBlob* pShaderBlob = 0;
+
+	// Just one set of shaders - for displaying solid color meshes that are lit 
+	// by a directional light
+
+	HRESULT hr = S_OK;
+
+	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef _DEBUG
+	// Skip optimization and add debug info if we're in debug configuration
+	dwShaderFlags |= D3DCOMPILE_DEBUG;
+	dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+	// Create the vertex shader
+	ID3DBlob* pErrorBlob = nullptr;
+
+	// Compile vertex shader
+	hr = D3DCompileFromFile(L"FlatColorWithLight.hlsl", nullptr, nullptr, "VShader", "vs_4_0",
+		dwShaderFlags, 0, &vShaderBlob, &pErrorBlob);
+
+	// Check for success
+	if (FAILED(hr))
+	{
+		if (pErrorBlob)
+		{
+			printf("Vertex shader compilation failed.\n");
+			printf(reinterpret_cast<const char*>(pErrorBlob->GetBufferPointer()));
+			pErrorBlob->Release();
+			pErrorBlob = nullptr;
+			assert(0);
+		}
+	}
+	if (pErrorBlob) pErrorBlob->Release();
+
+	// Create the vertex shader
+	hr = this->device->CreateVertexShader(vShaderBlob->GetBufferPointer(), vShaderBlob->GetBufferSize(), nullptr, &vShader);
+	if (FAILED(hr))
+	{
+		printf("Vertex shader creation failed.\n");
+		vShaderBlob->Release();
+		assert(0);
+	}
+
+	pErrorBlob = 0;
+	// Compile pixel shader
+	hr = D3DCompileFromFile(L"FlatColorWithLight.hlsl", nullptr, nullptr, "PShader", "ps_4_0",
+		dwShaderFlags, 0, &pShaderBlob, &pErrorBlob);
+
+	// Check for success
+	if (FAILED(hr))
+	{
+		if (pErrorBlob)
+		{
+			printf(reinterpret_cast<const char*>(pErrorBlob->GetBufferPointer()));
+			printf("Pixel Shader compilation failed.\n");
+			pErrorBlob->Release();
+			pErrorBlob = nullptr;
+			assert(0);
+		}
+	}
+	if (pErrorBlob) pErrorBlob->Release();
+
+	// Create the pixel shader
+	hr = this->device->CreatePixelShader(pShaderBlob->GetBufferPointer(), pShaderBlob->GetBufferSize(), nullptr, &pShader);
+	if (FAILED(hr))
+	{
+		printf("Pixel shader creation failed.\n");
+		pShaderBlob->Release();
+		assert(0);
+	}
+
+	//Input Layout
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	// Create the input layout
+	hr = this->device->CreateInputLayout(layout, ARRAYSIZE(layout), vShaderBlob->GetBufferPointer(),
+		vShaderBlob->GetBufferSize(), &inputLayout);
+
+	// Release our blobs
+	vShaderBlob->Release();
+	pShaderBlob->Release();
+
+	if (FAILED(hr))
+	{
+		printf("Input layout creation failed...\n");
+		assert(0);
+	}
+
+	// Now create the rasterizer state
+	D3D11_RASTERIZER_DESC descRast;
+	ZeroMemory(&descRast, sizeof(descRast));
+	descRast.FillMode = D3D11_FILL_SOLID;
+	descRast.CullMode = D3D11_CULL_BACK;
+	descRast.FrontCounterClockwise = true;
+	descRast.DepthClipEnable = true;
+	descRast.MultisampleEnable = false;
+
+	hr = this->device->CreateRasterizerState(&descRast, &rastState);
+	if (FAILED(hr))
+	{
+		printf("Rasterizer state creation failed...\n");
+		assert(0);
+	}
+};
+
+void Demo::privDestroyShader()
+{
+	if (rastState != 0) { rastState->Release(); rastState = 0; }
+	if (inputLayout != 0) { inputLayout->Release(); inputLayout = 0; }
+	if (vShader != 0) { vShader->Release(); vShader = 0; }
+	if (pShader != 0) { pShader->Release(); pShader = 0; }
+}
