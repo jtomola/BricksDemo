@@ -9,8 +9,8 @@ class Vect
 {
 public:
 	// Constructors
-	explicit Vect();
-	explicit Vect(const float inX, const float inY, const float inZ, const float inW = 1.0f);
+	Vect();
+	Vect(const float inX, const float inY, const float inZ, const float inW = 1.0f);
 	Vect(const Vect& vectIn);
 
 public:

@@ -20,8 +20,12 @@ Matrix::Matrix(const Vect& vect0, const Vect& vect1, const Vect& vect2, const Ve
 
 // Copy constructor
 Matrix::Matrix(const Matrix& matrixIn)
-	: v0(matrixIn.v0), v1(matrixIn.v1), v2(matrixIn.v2), v3(matrixIn.v3)
+	//: v0(matrixIn.v0), v1(matrixIn.v1), v2(matrixIn.v2), v3(matrixIn.v3)
 {
+	v0 = matrixIn.v0;
+	v1 = matrixIn.v1;
+	v2 = matrixIn.v2;
+	v3 = matrixIn.v3;
 }
 
 Matrix& Matrix::operator= (const Matrix& rhs)

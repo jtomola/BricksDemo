@@ -9,8 +9,8 @@ public:
 	friend class Vect;
 
     // Constructors
-    explicit Matrix();
-    explicit Matrix(const Vect& vect0, const Vect& vect1, const Vect& vect2, const Vect& vect3);
+    Matrix();
+    Matrix(const Vect& vect0, const Vect& vect1, const Vect& vect2, const Vect& vect3);
 
 public:
     Matrix(const Matrix& matrixIn);

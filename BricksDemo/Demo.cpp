@@ -139,7 +139,7 @@ void Demo::Run()
 	p->deviceCon->UpdateSubresource(p->projectionBuffer, 0, nullptr, &p->projection, 0, 0);
 
 	// Set up Lighting
-	Vect lightDir(50.0f, 50.0f, 50.0f);
+	Vect lightDir(100.0f, 50.0f, 20.0f);
 	lightDir.norm();
 	Vect lightColor(1.0f, 1.0f, 1.0f, 1.0f);
 	p->lightInfo.color = lightColor;
@@ -513,8 +513,8 @@ void Demo::privCreateShader()
 	ZeroMemory(&descRast, sizeof(descRast));
 	descRast.FillMode = D3D11_FILL_SOLID;
 	descRast.CullMode = D3D11_CULL_BACK;
-	descRast.FrontCounterClockwise = true;
-	//descRast.FrontCounterClockwise = false;
+	//descRast.FrontCounterClockwise = true;
+	descRast.FrontCounterClockwise = false;
 	descRast.DepthClipEnable = true;
 	descRast.MultisampleEnable = false;
 
