@@ -102,7 +102,7 @@ void Matrix::setRotXYZ(const float rotxIn, const float rotyIn, const float rotzI
 	rotZ._m4 = -rotZ._m1;
 	rotZ._m5 = rotZ._m0;
 
-	*this *= rotX * rotY * rotZ;
+	*this = rotX * rotY * rotZ;
 };
 
 void Matrix::setRotAxisAngle(const Vect& axisIn, const float angleIn)

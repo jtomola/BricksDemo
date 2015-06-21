@@ -36,6 +36,8 @@ private:
 	// Make this a singleton
 	static Demo *privGetInstance();
 
+	void privRotateCamera(const float elapsedTime);
+
 	HWND privCreateGraphicsWindow(HINSTANCE hInstance, int nCmdShow, const char* windowName, const int Width, const int Height);
 	void privInitDevice();
 	void privShutDownDevice();
@@ -84,6 +86,7 @@ private:
 	Matrix						modelView;
 	Matrix						projection;
 	LightStruct					lightInfo;
+	Vect						globalLightDir;
 	Vect						color;
 
 	bool running;

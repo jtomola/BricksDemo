@@ -2,7 +2,7 @@
 #include "Demo.h"
 
 Brick::Brick()
-	:	pos(-25.0f, -25.0f, -200.0f),
+	:	pos(0.0f, -25.0f, -200.0f),
 		scale(20.0f, 20.0f, 20.0f),
 		color(1.0f, 0.0f, 0.0f, 1.0f)
 {

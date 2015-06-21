@@ -4,6 +4,7 @@
 #include "Vect.h"
 #include "Matrix.h"
 #include "Camera.h"
+#include <time.h>
 
 // Callback needed to handle Window messages
 LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -16,7 +17,7 @@ Demo::Demo()
 		vShader(0), pShader(0), inputLayout(0), rastState(0),
 		modelViewBuffer(0), projectionBuffer(0), lightBuffer(0),
 		colorBuffer(0), vertBuffer(0), indexBuffer(0),
-		modelView(), projection(), lightInfo(), color(),
+		modelView(), projection(), lightInfo(), globalLightDir(), color(),
 		running(0)
 {
 };
@@ -32,6 +33,45 @@ Demo* Demo::privGetInstance()
 	// Singleton storage
 	static Demo Instance;
 	return &Instance;
+};
+
+void Demo::privRotateCamera(const float elapsedTime)
+{
+	// Check whether right mouse button is pressed
+	short rmb = GetKeyState(VK_RBUTTON);
+	bool rmbPressed = (rmb & 0x80) != 0;
+
+	// Get mouse position
+	POINT cursorPos;
+	GetCursorPos(&cursorPos);
+	int xPos = (int)cursorPos.x;
+	int yPos = (int)cursorPos.y;
+
+	// Get window coordinates
+	RECT winSize;
+	GetWindowRect(this->window, &winSize);
+
+	static float mouseXPos = 0.0f, mouseYPos = 0.0f;
+	static float mouseXPosLast = 0.0f, mouseYPosLast = 0.0f;
+
+	mouseXPos = float(xPos - winSize.left) / float(winSize.right - winSize.left);
+	mouseYPos = float(yPos - winSize.top) / float(winSize.bottom - winSize.top);
+
+	float mouseXMovement = mouseXPos - mouseXPosLast;
+	float mouseYMovement = mouseYPos - mouseYPosLast;
+
+	mouseXPosLast = mouseXPos;
+	mouseYPosLast = mouseYPos;
+
+	// Now we need to rotate the camera if right key is pressed
+	if (rmbPressed)
+	{
+		float rotDist = 45.0f * MATH_PI / 180.0f;
+		this->cam.rotateXLocal(rotDist * mouseYMovement);
+		this->cam.rotateYGlobal(rotDist * mouseXMovement);
+	}
+
+	this->cam.updateCamera();
 };
 
 ID3D11Device* Demo::GetDevice()
@@ -98,6 +138,17 @@ void Demo::Update()
 {
 	Demo* pDemo = Demo::privGetInstance();
 	UNUSED(pDemo);
+
+	// Need to keep track of elapsed time
+	static clock_t currTime;
+	currTime = clock();
+	static clock_t lastTime = currTime;
+	float elapsedTime = (float) (currTime - lastTime) / CLOCKS_PER_SEC;
+	elapsedTime;
+	lastTime = currTime;
+
+	// Rotate camera
+	pDemo->privRotateCamera(elapsedTime);
 };
 
 void Demo::Draw()
@@ -105,11 +156,10 @@ void Demo::Draw()
 	Demo* pDemo = Demo::privGetInstance();
 	UNUSED(pDemo);
 
-	// Set our constant buffers
-	pDemo->deviceCon->VSSetConstantBuffers(0, 1, &pDemo->modelViewBuffer);
-	pDemo->deviceCon->VSSetConstantBuffers(1, 1, &pDemo->projectionBuffer);
-	pDemo->deviceCon->VSSetConstantBuffers(2, 1, &pDemo->lightBuffer);
-	pDemo->deviceCon->PSSetConstantBuffers(3, 1, &pDemo->colorBuffer);
+	// Since we're only passing modelview matrix to shader, need to put our light direction
+	// into view coordinates
+	pDemo->lightInfo.direction = pDemo->globalLightDir * pDemo->cam.getViewMatrix();
+	pDemo->deviceCon->UpdateSubresource(pDemo->lightBuffer, 0, nullptr, &pDemo->lightInfo, 0, 0);
 
 	// Clear background
 	float color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
@@ -139,11 +189,12 @@ void Demo::Run()
 	p->deviceCon->UpdateSubresource(p->projectionBuffer, 0, nullptr, &p->projection, 0, 0);
 
 	// Set up Lighting
-	Vect lightDir(100.0f, 50.0f, 20.0f);
+	Vect lightDir(20.0f, 50.0f, 100.0f);
 	lightDir.norm();
 	Vect lightColor(1.0f, 1.0f, 1.0f, 1.0f);
 	p->lightInfo.color = lightColor;
 	p->lightInfo.direction = lightDir;
+	p->globalLightDir = lightDir;
 	p->deviceCon->UpdateSubresource(p->lightBuffer, 0, nullptr, &p->lightInfo, 0, 0);
 
 	p->running = true;
@@ -256,11 +307,11 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		// Need to capture it outside of window
 	case WM_LBUTTONDOWN:
-		SetCapture(Demo::GetWindow());
+		//SetCapture(Demo::GetWindow());
 		break;
 
 	case WM_LBUTTONUP:
-		ReleaseCapture();
+		//ReleaseCapture();
 		break;
 
 	case WM_RBUTTONDOWN:
@@ -268,9 +319,9 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_RBUTTONUP:
-		SetCapture(Demo::GetWindow());
+		//SetCapture(Demo::GetWindow());
+		ReleaseCapture();
 		break;
-
 
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -592,6 +643,13 @@ void Demo::privCreateBuffers()
 		assert(0);
 	}
 	this->deviceCon->UpdateSubresource(colorBuffer, 0, nullptr, &color, 0, 0);
+
+	// Set our constant buffers
+	this->deviceCon->VSSetConstantBuffers(0, 1, &this->modelViewBuffer);
+	this->deviceCon->VSSetConstantBuffers(1, 1, &this->projectionBuffer);
+	this->deviceCon->VSSetConstantBuffers(2, 1, &this->lightBuffer);
+	this->deviceCon->PSSetConstantBuffers(3, 1, &this->colorBuffer);
+
 
 	// VERT AND INDEX BUFFERS ------------------------------------------------------
 	// -----------------------------------------------------------------------------
