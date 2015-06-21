@@ -10,9 +10,13 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Constructor
 Demo::Demo()
-	:	window(0), swapChain(0), device(0), deviceCon(0),
+	:	cam(), brick(),
+		window(0), swapChain(0), device(0), deviceCon(0),
 		backBufferView(0), depthTexture(0), depthView(0),
 		vShader(0), pShader(0), inputLayout(0), rastState(0),
+		modelViewBuffer(0), projectionBuffer(0), lightBuffer(0),
+		colorBuffer(0), vertBuffer(0), indexBuffer(0),
+		modelView(), projection(), lightInfo(), color(),
 		running(0)
 {
 };
@@ -48,6 +52,33 @@ HWND Demo::GetWindow()
 	return pDemo->window;
 };
 
+Camera* Demo::GetCamera()
+{
+	Demo* pDemo = Demo::privGetInstance();
+	return &pDemo->cam;
+}
+
+void Demo::SetModelView(const Matrix& mvIn)
+{
+	// Grab instance
+	Demo* pDemo = Demo::privGetInstance();
+
+	pDemo->modelView = mvIn;
+	pDemo->modelView.T();
+
+	pDemo->deviceCon->UpdateSubresource(pDemo->modelViewBuffer, 0, nullptr, &pDemo->modelView, 0, 0);
+}
+
+void Demo::SetColorInfo(const Vect& colorIn)
+{
+	// Grab instance
+	Demo* pDemo = Demo::privGetInstance();
+
+	pDemo->color = colorIn;
+
+	pDemo->deviceCon->UpdateSubresource(pDemo->colorBuffer, 0, nullptr, &pDemo->color, 0, 0);
+}
+
 // Initialize the engine
 void Demo::Initialize(HINSTANCE hInstance, int nCmdShow)
 {
@@ -60,6 +91,7 @@ void Demo::Initialize(HINSTANCE hInstance, int nCmdShow)
 	// Initialize Direct3D
 	pDemo->privInitDevice();
 	pDemo->privCreateShader();
+	pDemo->privCreateBuffers();
 };
 
 void Demo::Update()
@@ -73,6 +105,12 @@ void Demo::Draw()
 	Demo* pDemo = Demo::privGetInstance();
 	UNUSED(pDemo);
 
+	// Set our constant buffers
+	pDemo->deviceCon->VSSetConstantBuffers(0, 1, &pDemo->modelViewBuffer);
+	pDemo->deviceCon->VSSetConstantBuffers(1, 1, &pDemo->projectionBuffer);
+	pDemo->deviceCon->VSSetConstantBuffers(2, 1, &pDemo->lightBuffer);
+	pDemo->deviceCon->PSSetConstantBuffers(3, 1, &pDemo->colorBuffer);
+
 	// Clear background
 	float color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	pDemo->deviceCon->ClearRenderTargetView(pDemo->backBufferView, (const float*)&color[0]);
@@ -80,20 +118,33 @@ void Demo::Draw()
 	// Clear the depth buffer to 1.0 (max depth)
 	pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
+	pDemo->brick.Draw();
+
 	pDemo->swapChain->Present(0, 0);
 };
 
 // Run the demo
 void Demo::Run()
 {
-	Camera cam;
-	cam.setViewport(0, 0, GAME_WIDTH, GAME_HEIGHT);
-	cam.setPerspective(35.0f, float(GAME_WIDTH) / float(GAME_HEIGHT), 1.0f, 4500.0f);
-	cam.setOrientAndPosition(Vect(0.0f, 1.0f, 0.0f), Vect(0.0f, 0.0f, -10.0f), Vect(0.0f, 0.0f, 300.0f));
-	cam.updateCamera();
-
 	// Get the instance
 	Demo *p = Demo::privGetInstance();
+
+	// Set up camera
+	p->cam.setViewport(0, 0, GAME_WIDTH, GAME_HEIGHT);
+	p->cam.setPerspective(35.0f, float(GAME_WIDTH) / float(GAME_HEIGHT), 1.0f, 4500.0f);
+	p->cam.setOrientAndPosition(Vect(0.0f, 1.0f, 0.0f), Vect(0.0f, 0.0f, -10.0f), Vect(0.0f, 0.0f, 0.0f));
+	p->cam.updateCamera();
+	p->projection = p->cam.getProjMatrix();
+	p->projection.T();
+	p->deviceCon->UpdateSubresource(p->projectionBuffer, 0, nullptr, &p->projection, 0, 0);
+
+	// Set up Lighting
+	Vect lightDir(50.0f, 50.0f, 50.0f);
+	lightDir.norm();
+	Vect lightColor(1.0f, 1.0f, 1.0f, 1.0f);
+	p->lightInfo.color = lightColor;
+	p->lightInfo.direction = lightDir;
+	p->deviceCon->UpdateSubresource(p->lightBuffer, 0, nullptr, &p->lightInfo, 0, 0);
 
 	p->running = true;
 
@@ -125,6 +176,7 @@ void Demo::Run()
 		}
 	}
 
+	p->privDestroyBuffers();
 	p->privDestroyShader();
 	p->privShutDownDevice();
 };
@@ -248,11 +300,17 @@ void Demo::privInitDevice()
 	scd.Windowed = TRUE;                          
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
+	UINT createDeviceFlags = 0;
+#ifdef _DEBUG
+	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+
 	// create a device, device context and swap chain using the information in the scd struct
 	HRESULT result = D3D11CreateDeviceAndSwapChain(NULL,
 		D3D_DRIVER_TYPE_HARDWARE,
 		NULL,
-		NULL,
+		createDeviceFlags,
 		NULL,
 		NULL,
 		D3D11_SDK_VERSION,
@@ -456,6 +514,7 @@ void Demo::privCreateShader()
 	descRast.FillMode = D3D11_FILL_SOLID;
 	descRast.CullMode = D3D11_CULL_BACK;
 	descRast.FrontCounterClockwise = true;
+	//descRast.FrontCounterClockwise = false;
 	descRast.DepthClipEnable = true;
 	descRast.MultisampleEnable = false;
 
@@ -465,6 +524,13 @@ void Demo::privCreateShader()
 		printf("Rasterizer state creation failed...\n");
 		assert(0);
 	}
+
+	// Now set all of these as active
+	deviceCon->VSSetShader(vShader, nullptr, 0);
+	deviceCon->PSSetShader(pShader, nullptr, 0);
+	deviceCon->IASetInputLayout(inputLayout);
+	deviceCon->RSSetState(rastState);
+	deviceCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 };
 
 void Demo::privDestroyShader()
@@ -474,3 +540,351 @@ void Demo::privDestroyShader()
 	if (vShader != 0) { vShader->Release(); vShader = 0; }
 	if (pShader != 0) { pShader->Release(); pShader = 0; }
 }
+
+void Demo::privCreateBuffers()
+{
+	// CONSTANT BUFFERS ------------------------------------------------------------
+	// -----------------------------------------------------------------------------
+
+	// Constant buffer description
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(LightStruct);
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.CPUAccessFlags = 0;
+
+	// Light buffer
+	HRESULT hr = this->device->CreateBuffer(&bd, nullptr, &lightBuffer);
+	if (FAILED(hr))
+	{
+		printf("Light buffer creation failed...\n");
+		assert(0);
+	}
+	this->deviceCon->UpdateSubresource(lightBuffer, 0, nullptr, &lightInfo, 0, 0);
+
+	// ModelView buffer
+	bd.ByteWidth = sizeof(Matrix);
+	hr = this->device->CreateBuffer(&bd, nullptr, &modelViewBuffer);
+	if (FAILED(hr))
+	{
+		printf("Model view buffer creation failed...\n");
+		assert(0);
+	}
+	this->deviceCon->UpdateSubresource(modelViewBuffer, 0, nullptr, &modelView, 0, 0);
+
+	// Projection buffer
+	bd.ByteWidth = sizeof(Matrix);
+	hr = this->device->CreateBuffer(&bd, nullptr, &projectionBuffer);
+	if (FAILED(hr))
+	{
+		printf("Projection buffer creation failed...\n");
+		assert(0);
+	}
+	this->deviceCon->UpdateSubresource(projectionBuffer, 0, nullptr, &projection, 0, 0);
+
+	// Color buffer
+	bd.ByteWidth = sizeof(Vect);
+	hr = this->device->CreateBuffer(&bd, nullptr, &colorBuffer);
+	if (FAILED(hr))
+	{
+		printf("Color constant buffer creation failed...\n");
+		assert(0);
+	}
+	this->deviceCon->UpdateSubresource(colorBuffer, 0, nullptr, &color, 0, 0);
+
+	// VERT AND INDEX BUFFERS ------------------------------------------------------
+	// -----------------------------------------------------------------------------
+	struct Triangle
+	{
+		unsigned int vx;
+		unsigned int vy;
+		unsigned int vz;
+	};
+
+	struct Vertex
+	{
+		float x;
+		float y;
+		float z;
+		float nx;
+		float ny;
+		float nz;
+	};
+
+	// Create the data for our cube
+	Triangle triList[12];
+	Vertex vertList[24];
+
+	// Left face
+	vertList[0].x = -0.5f;
+	vertList[0].y = 0.5f;
+	vertList[0].z = 0.5f;
+	vertList[0].nx = -1.0f;
+	vertList[0].ny = 0.0f;
+	vertList[0].nz = 0.0f;
+
+	vertList[1].x = -0.5f;
+	vertList[1].y = 0.5f;
+	vertList[1].z = -0.5f;
+	vertList[1].nx = -1.0f;
+	vertList[1].ny = 0.0f;
+	vertList[1].nz = 0.0f;
+
+	vertList[2].x = -0.5f;
+	vertList[2].y = -0.5f;
+	vertList[2].z = 0.5f;
+	vertList[2].nx = -1.0f;
+	vertList[2].ny = 0.0f;
+	vertList[2].nz = 0.0f;
+
+	vertList[3].x = -0.5f;
+	vertList[3].y = -0.5f;
+	vertList[3].z = -0.5f;
+	vertList[3].nx = -1.0f;
+	vertList[3].ny = 0.0f;
+	vertList[3].nz = 0.0f;
+
+	// Right face
+	vertList[4].x = 0.5f;
+	vertList[4].y = 0.5f;
+	vertList[4].z = 0.5f;
+	vertList[4].nx = 1.0f;
+	vertList[4].ny = 0.0f;
+	vertList[4].nz = 0.0f;
+
+	vertList[5].x = 0.5f;
+	vertList[5].y = 0.5f;
+	vertList[5].z = -0.5f;
+	vertList[5].nx = 1.0f;
+	vertList[5].ny = 0.0f;
+	vertList[5].nz = 0.0f;
+
+	vertList[6].x = 0.5f;
+	vertList[6].y = -0.5f;
+	vertList[6].z = 0.5f;
+	vertList[6].nx = 1.0f;
+	vertList[6].ny = 0.0f;
+	vertList[6].nz = 0.0f;
+
+	vertList[7].x = 0.5f;
+	vertList[7].y = -0.5f;
+	vertList[7].z = -0.5f;
+	vertList[7].nx = 1.0f;
+	vertList[7].ny = 0.0f;
+	vertList[7].nz = 0.0f;
+
+	// Front face
+	vertList[8].x = -0.5f;
+	vertList[8].y = 0.5f;
+	vertList[8].z = 0.5f;
+	vertList[8].nx = 0.0f;
+	vertList[8].ny = 0.0f;
+	vertList[8].nz = 1.0f;
+
+	vertList[9].x = 0.5f;
+	vertList[9].y = 0.5f;
+	vertList[9].z = 0.5f;
+	vertList[9].nx = 0.0f;
+	vertList[9].ny = 0.0f;
+	vertList[9].nz = 1.0f;
+
+	vertList[10].x = -0.5f;
+	vertList[10].y = -0.5f;
+	vertList[10].z = 0.5f;
+	vertList[10].nx = 0.0f;
+	vertList[10].ny = 0.0f;
+	vertList[10].nz = 1.0f;
+
+	vertList[11].x = 0.5f;
+	vertList[11].y = -0.5f;
+	vertList[11].z = 0.5f;
+	vertList[11].nx = 0.0f;
+	vertList[11].ny = 0.0f;
+	vertList[11].nz = 1.0f;
+
+	// Back face
+	vertList[12].x = -0.5f;
+	vertList[12].y = 0.5f;
+	vertList[12].z = -0.5f;
+	vertList[12].nx = 0.0f;
+	vertList[12].ny = 0.0f;
+	vertList[12].nz = -1.0f;
+
+	vertList[13].x = 0.5f;
+	vertList[13].y = 0.5f;
+	vertList[13].z = -0.5f;
+	vertList[13].nx = 0.0f;
+	vertList[13].ny = 0.0f;
+	vertList[13].nz = -1.0f;
+
+	vertList[14].x = -0.5f;
+	vertList[14].y = -0.5f;
+	vertList[14].z = -0.5f;
+	vertList[14].nx = 0.0f;
+	vertList[14].ny = 0.0f;
+	vertList[14].nz = -1.0f;
+
+	vertList[15].x = 0.5f;
+	vertList[15].y = -0.5f;
+	vertList[15].z = -0.5f;
+	vertList[15].nx = 0.0f;
+	vertList[15].ny = 0.0f;
+	vertList[15].nz = -1.0f;
+
+	// Top face
+	vertList[16].x = -0.5f;
+	vertList[16].y = 0.5f;
+	vertList[16].z = -0.5f;
+	vertList[16].nx = 0.0f;
+	vertList[16].ny = 1.0f;
+	vertList[16].nz = 0.0f;
+
+	vertList[17].x = 0.5f;
+	vertList[17].y = 0.5f;
+	vertList[17].z = -0.5f;
+	vertList[17].nx = 0.0f;
+	vertList[17].ny = 1.0f;
+	vertList[17].nz = 0.0f;
+
+	vertList[18].x = -0.5f;
+	vertList[18].y = 0.5f;
+	vertList[18].z = 0.5f;
+	vertList[18].nx = 0.0f;
+	vertList[18].ny = 1.0f;
+	vertList[18].nz = 0.0f;
+
+	vertList[19].x = 0.5f;
+	vertList[19].y = 0.5f;
+	vertList[19].z = 0.5f;
+	vertList[19].nx = 0.0f;
+	vertList[19].ny = 1.0f;
+	vertList[19].nz = 0.0f;
+
+	// Bottom face
+	vertList[20].x = -0.5f;
+	vertList[20].y = -0.5f;
+	vertList[20].z = -0.5f;
+	vertList[20].nx = 0.0f;
+	vertList[20].ny = -1.0f;
+	vertList[20].nz = 0.0f;
+
+	vertList[21].x = 0.5f;
+	vertList[21].y = -0.5f;
+	vertList[21].z = -0.5f;
+	vertList[21].nx = 0.0f;
+	vertList[21].ny = -1.0f;
+	vertList[21].nz = 0.0f;
+
+	vertList[22].x = -0.5f;
+	vertList[22].y = -0.5f;
+	vertList[22].z = 0.5f;
+	vertList[22].nx = 0.0f;
+	vertList[22].ny = -1.0f;
+	vertList[22].nz = 0.0f;
+
+	vertList[23].x = 0.5f;
+	vertList[23].y = -0.5f;
+	vertList[23].z = 0.5f;
+	vertList[23].nx = 0.0f;
+	vertList[23].ny = -1.0f;
+	vertList[23].nz = 0.0f;
+
+	// Triangle lists
+	triList[0].vx = 1;
+	triList[0].vy = 0;
+	triList[0].vz = 3;
+
+	triList[1].vx = 3;
+	triList[1].vy = 0;
+	triList[1].vz = 2;
+
+	triList[2].vx = 6;
+	triList[2].vy = 4;
+	triList[2].vz = 5;
+
+	triList[3].vx = 6;
+	triList[3].vy = 5;
+	triList[3].vz = 7;
+
+	triList[4].vx = 10;
+	triList[4].vy = 8;
+	triList[4].vz = 9;
+
+	triList[5].vx = 10;
+	triList[5].vy = 9;
+	triList[5].vz = 11;
+
+	triList[6].vx = 13;
+	triList[6].vy = 12;
+	triList[6].vz = 15;
+
+	triList[7].vx = 15;
+	triList[7].vy = 12;
+	triList[7].vz = 14;
+
+	triList[8].vx = 16;
+	triList[8].vy = 17;
+	triList[8].vz = 18;
+
+	triList[9].vx = 18;
+	triList[9].vy = 17;
+	triList[9].vz = 19;
+
+	triList[10].vx = 23;
+	triList[10].vy = 21;
+	triList[10].vz = 20;
+
+	triList[11].vx = 23;
+	triList[11].vy = 20;
+	triList[11].vz = 22;
+
+	// Now create vertex buffer
+	ZeroMemory(&bd, sizeof(bd));
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(Vertex) * 24;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA InitData;
+	ZeroMemory(&InitData, sizeof(InitData));
+	InitData.pSysMem = &vertList[0];
+	hr = this->device->CreateBuffer(&bd, &InitData, &vertBuffer);
+	if (FAILED(hr))
+	{
+		printf("Vertex buffer creation failed...\n");
+		assert(0);
+	}
+
+	// Now create index buffer
+	bd.ByteWidth = sizeof(Triangle) * 12;
+	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+	InitData.pSysMem = &triList[0];
+	hr = this->device->CreateBuffer(&bd, &InitData, &indexBuffer);
+	if (FAILED(hr))
+	{
+		printf("Index buffer creation failed...\n");
+		assert(0);
+	}
+
+	// Set vert buffer
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	deviceCon->IASetVertexBuffers(0, 1, &vertBuffer, &stride, &offset);
+
+	// Set index buffer
+	deviceCon->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+};
+
+void Demo::privDestroyBuffers()
+{
+	// Delete constant buffers
+	if (modelViewBuffer) { modelViewBuffer->Release(); modelViewBuffer = 0; }
+	if (projectionBuffer) { projectionBuffer->Release(); projectionBuffer = 0; }
+	if (lightBuffer) { lightBuffer->Release(); lightBuffer = 0; }
+	if (colorBuffer) { colorBuffer->Release(); colorBuffer = 0; }
+
+	// Delete vert and index buffers
+	if (vertBuffer) { vertBuffer->Release(); vertBuffer = 0; }
+	if (indexBuffer) { indexBuffer->Release(); indexBuffer = 0; }
+};

@@ -25,6 +25,9 @@
     <ClInclude Include="Camera.h">
       <Filter>Files</Filter>
     </ClInclude>
+    <ClInclude Include="Brick.h">
+      <Filter>Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -40,6 +43,9 @@
       <Filter>Files</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Brick.cpp">
       <Filter>Files</Filter>
     </ClCompile>
   </ItemGroup>

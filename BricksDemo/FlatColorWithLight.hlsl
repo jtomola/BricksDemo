@@ -17,7 +17,7 @@ cbuffer ConstBufferP : register(b1)
 // Buffer holding light info
 cbuffer ConstBufferLight : register(b2)
 {
-	float4 LightDir; // In view coordinates
+	float4 LightDir;
 	float4 LightColor;
 };
 
@@ -51,8 +51,8 @@ PS_INPUT VShader(VS_INPUT input)
 	PS_INPUT output = (PS_INPUT)0;
 	output.Pos = mul(input.Pos, ModelView);
 
-		// Need to transform normal - only rotation in modelview
-		float3x3 normalMatrix;
+	// Need to transform normal - only rotation in modelview
+	float3x3 normalMatrix;
 	normalMatrix._m00_m01_m02 = normalize(ModelView._m00_m01_m02);
 	normalMatrix._m10_m11_m12 = normalize(ModelView._m10_m11_m12);
 	normalMatrix._m20_m21_m22 = normalize(ModelView._m20_m21_m22);

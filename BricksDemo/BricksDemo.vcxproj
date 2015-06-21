@@ -67,6 +67,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Brick.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="D3DHeader.h" />
     <ClInclude Include="Demo.h" />
@@ -74,6 +75,7 @@
     <ClInclude Include="Vect.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Brick.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Demo.cpp" />
     <ClCompile Include="main.cpp" />
