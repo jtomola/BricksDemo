@@ -69,6 +69,7 @@
   <ItemGroup>
     <ClInclude Include="Brick.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Crosshair.h" />
     <ClInclude Include="D3DHeader.h" />
     <ClInclude Include="Demo.h" />
     <ClInclude Include="Matrix.h" />
@@ -77,6 +78,7 @@
   <ItemGroup>
     <ClCompile Include="Brick.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Crosshair.cpp" />
     <ClCompile Include="Demo.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matrix.cpp" />

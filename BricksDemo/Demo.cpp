@@ -11,7 +11,7 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Constructor
 Demo::Demo()
-	:	cam(), ground(), bricks(),
+	:	cam(), ground(), bricks(), crosshairX(), crosshairY(),
 		window(0), swapChain(0), device(0), deviceCon(0),
 		backBufferView(0), depthTexture(0), depthView(0),
 		vShader(0), pShader(0), inputLayout(0), rastState(0),
@@ -25,11 +25,18 @@ Demo::Demo()
 	ground.pos = Vect(0.0f, -2.5f, 0.0f);
 	ground.scale = Vect(1000.0f, 5.0f, 3000.0f);
 
+	// Setup crosshairs
+	crosshairX.pos = Vect(0.0f, 0.0f, 0.0f);
+	crosshairX.scale = Vect(0.1f, 0.005f, 0.01f);
+
+	crosshairY.pos = Vect(0.0f, 0.0f, 0.0f);
+	crosshairY.scale = Vect(0.005f, 0.1f, 0.01f);
+
 	Vect colors[4];
 	colors[0] = Vect(1.0f, 0.0f, 0.0f, 1.0f);
 	colors[1] = Vect(0.0f, 1.0f, 0.0f, 1.0f);
 	colors[2] = Vect(0.0f, 0.0f, 1.0f, 1.0f);
-	colors[3] = Vect(0.0f, 0.5f, 0.5f, 1.0f);
+	colors[3] = Vect(1.0f, 1.0f, 0.0f, 1.0f);
 
 	for (int i = 0; i < 5; i++)
 	{
@@ -170,6 +177,9 @@ void Demo::Update()
 
 	// Rotate camera
 	pDemo->privRotateCamera(elapsedTime);
+
+	pDemo->crosshairX.Update(elapsedTime);
+	pDemo->crosshairY.Update(elapsedTime);
 };
 
 void Demo::Draw()
@@ -196,6 +206,10 @@ void Demo::Draw()
 	{
 		pDemo->bricks[i].Draw();
 	}
+	
+	// Draw crosshairs
+	pDemo->crosshairX.Draw();
+	pDemo->crosshairY.Draw();
 
 	pDemo->swapChain->Present(0, 0);
 };

@@ -26,16 +26,16 @@ public:
     void rotateYGlobal(const float Value);
     void rotateXLocal(const float Value);
 
-private: 
-    // private helper functions
-    void privUpdateProjectionMatrix();
-    void privUpdateViewMatrix();
-
     // Camera direction vectors 
     Vect    vUp;        // Up vector
     Vect    vDir;       // Vector camera is facing
     Vect    vRight;     // derived from vUp and vDir
     Vect    vPos;       // Position of camera
+
+private: 
+    // private helper functions
+    void privUpdateProjectionMatrix();
+    void privUpdateViewMatrix();
 
     // Frustum inputs
     float   nearDist;

@@ -7,6 +7,7 @@
 #include "Matrix.h"
 #include "Camera.h"
 #include "Brick.h"
+#include "Crosshair.h"
 
 #define NUM_BRICKS 30
 
@@ -59,6 +60,8 @@ private:
 	Camera						cam;
 	Brick						ground;
 	Brick						bricks[NUM_BRICKS];
+	Crosshair					crosshairX;
+	Crosshair					crosshairY;
 
 	// Window and D3D device info
 	HWND						window;
