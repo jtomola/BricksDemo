@@ -21,7 +21,7 @@ Demo::Demo()
 		running(0)
 {
 	// Set positions and of our bricks
-	ground.color = Vect(0.0f, 0.0f, 0.0f, 1.0f);
+	ground.color = Vect(0.2f, 0.2f, 0.2f, 1.0f);
 	ground.pos = Vect(0.0f, -2.5f, 0.0f);
 	ground.scale = Vect(1000.0f, 5.0f, 3000.0f);
 
@@ -188,13 +188,14 @@ void Demo::Draw()
 
 	// Clear the depth buffer to 1.0 (max depth)
 	pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	//pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 0.0f, 0);
+
+	pDemo->ground.Draw();
 
 	for (int i = 0; i < NUM_BRICKS; i++)
 	{
 		pDemo->bricks[i].Draw();
 	}
-
-	pDemo->ground.Draw();
 
 	pDemo->swapChain->Present(0, 0);
 };
@@ -459,6 +460,8 @@ void Demo::privInitDevice()
 	// Set the render targets (back buffer of our swap chain and the depth texture we created)
 	deviceCon->OMSetRenderTargets(1, &backBufferView, depthView);
 
+	deviceCon->OMSetDepthStencilState(0, 0);
+
 	// Set the viewport
 	D3D11_VIEWPORT viewport;
 	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
@@ -467,6 +470,8 @@ void Demo::privInitDevice()
 	viewport.TopLeftY = 0;
 	viewport.Width = GAME_WIDTH;
 	viewport.Height = GAME_HEIGHT;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
 
 	deviceCon->RSSetViewports(1, &viewport);
 };
