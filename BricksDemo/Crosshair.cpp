@@ -16,8 +16,12 @@ void Crosshair::Draw()
 	Matrix Scale;
 	Scale.setScale(scale[0], scale[1], scale[2]);
 
+	Matrix Rot = Demo::GetCamera()->getViewMatrix();
+	Rot[12] = Rot[13] = Rot[14] = 0.0f;
+	Rot.T();
+
 	//Matrix ModelView(Scale);
-	Matrix ModelView = Scale * Trans * Demo::GetCamera()->getViewMatrix();
+	Matrix ModelView = Scale * Rot * Trans * Demo::GetCamera()->getViewMatrix();
 
 	Demo::SetModelView(ModelView);
 	Demo::SetColorInfo(color);

@@ -206,6 +206,11 @@ void Demo::Draw()
 	{
 		pDemo->bricks[i].Draw();
 	}
+
+	// Now we're making sure our crosshairs are always fully lit.
+	// This allows us to get away without writing another shader
+	pDemo->lightInfo.direction = Vect(0.0f, 0.0f, 1.0f);
+	pDemo->deviceCon->UpdateSubresource(pDemo->lightBuffer, 0, nullptr, &pDemo->lightInfo, 0, 0);
 	
 	// Draw crosshairs
 	pDemo->crosshairX.Draw();
