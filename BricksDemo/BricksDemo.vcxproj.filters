@@ -34,6 +34,9 @@
     <ClInclude Include="Bullet.h">
       <Filter>Files</Filter>
     </ClInclude>
+    <ClInclude Include="Quat.h">
+      <Filter>Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -58,6 +61,9 @@
       <Filter>Files</Filter>
     </ClCompile>
     <ClCompile Include="Bullet.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Quat.cpp">
       <Filter>Files</Filter>
     </ClCompile>
   </ItemGroup>

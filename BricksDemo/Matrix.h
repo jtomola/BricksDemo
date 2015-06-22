@@ -3,6 +3,8 @@
 
 #include "Vect.h"
 
+class Quat;
+
 class Matrix
 {
 public:
@@ -28,6 +30,7 @@ public:
     void setScale(const float xScale, const float yScale, const float zScale);
     void setRotXYZ(const float rotxIn, const float rotyIn, const float rotzIn);
     void setRotAxisAngle(const Vect& axisIn, const float angleIn);
+	void set(const Quat& quatIn);
 
     // Get and set functions for rows
     void set(const Vect& vect0, const Vect& vect1, const Vect& vect2, const Vect& vect3);

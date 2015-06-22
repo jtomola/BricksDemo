@@ -2,6 +2,7 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
+#include "Quat.h"
 
 // Default Constructor
 Matrix::Matrix()
@@ -357,3 +358,33 @@ Matrix& Matrix::operator*= (const float s)
 
     return *this;
 }
+
+// Quat set function
+void Matrix::set(const Quat& quatIn)
+{
+	const float qx = quatIn[0];
+	const float qy = quatIn[1];
+	const float qz = quatIn[2];
+	const float qw = quatIn[3];
+
+	this->_m0 = 1 - 2 * (qy*qy + qz*qz);
+	this->_m1 = 2 * (qx*qy + qw*qz);
+	this->_m2 = 2 * (qx*qz - qw*qy);
+	this->_m3 = 0.0f;
+
+	this->_m4 = 2 * (qx*qy - qw*qz);
+	this->_m5 = 1 - 2 * (qx*qx + qz*qz);
+	this->_m6 = 2 * (qy*qz + qw*qx);
+	this->_m7 = 0.0f;
+
+	this->_m8 = 2 * (qx*qz + qw*qy);
+	this->_m9 = 2 * (qy*qz - qw*qx);
+	this->_m10 = 1 - 2 * (qx*qx + qy*qy);
+	this->_m11 = 0.0f;
+
+	this->_m12 = 0.0f;
+	this->_m13 = 0.0f;
+	this->_m14 = 0.0f;
+	this->_m15 = 1.0f;
+};
+
