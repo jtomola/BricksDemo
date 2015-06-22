@@ -11,7 +11,7 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Constructor
 Demo::Demo()
-	:	cam(), ground(), bricks(), crosshairX(), crosshairY(),
+	:	cam(), ground(), bricks(), crosshairX(), crosshairY(), bullet(),
 		window(0), swapChain(0), device(0), deviceCon(0),
 		backBufferView(0), depthTexture(0), depthView(0),
 		vShader(0), pShader(0), inputLayout(0), rastState(0),
@@ -32,12 +32,14 @@ Demo::Demo()
 	crosshairY.pos = Vect(0.0f, 0.0f, -1.005f);
 	crosshairY.scale = Vect(0.0025f, 0.05f, 0.01f);
 
+	// Set the 4 colors for our bricks
 	Vect colors[4];
 	colors[0] = Vect(1.0f, 0.0f, 0.0f, 1.0f);
 	colors[1] = Vect(0.0f, 1.0f, 0.0f, 1.0f);
 	colors[2] = Vect(0.0f, 0.0f, 1.0f, 1.0f);
 	colors[3] = Vect(1.0f, 1.0f, 0.0f, 1.0f);
 
+	// Create the bricks
 	for (int i = 0; i < 5; i++)
 	{
 		for (int j = 0; j < 6; j++)
@@ -101,6 +103,28 @@ void Demo::privRotateCamera(const float elapsedTime)
 
 	this->cam.updateCamera();
 };
+
+void Demo::privFireBullet(const float elapsedTime)
+{
+	// Delay between shots
+	const float waitTime = 2.0f;
+	
+	static float currTime = waitTime;
+	currTime += elapsedTime;
+
+	// Check whether left mouse button is pressed
+	short lmb = GetKeyState(VK_LBUTTON);
+	bool lmbPressed = (lmb & 0x80) != 0;
+
+	// Fire if button is pressed and the wait time has elapsed
+	if (lmbPressed && currTime >= waitTime)
+	{
+		currTime = 0.0f;
+		this->bullet.pos = this->cam.vPos;
+		this->bullet.velocity = this->cam.vDir * -500.0f;
+		this->bullet.active = 1;
+	}
+}
 
 ID3D11Device* Demo::GetDevice()
 {
@@ -177,6 +201,9 @@ void Demo::Update()
 
 	// Rotate camera
 	pDemo->privRotateCamera(elapsedTime);
+	pDemo->privFireBullet(elapsedTime);
+
+	pDemo->bullet.Update(elapsedTime);
 };
 
 void Demo::Draw()
@@ -212,6 +239,9 @@ void Demo::Draw()
 	// Draw crosshairs
 	pDemo->crosshairX.Draw();
 	pDemo->crosshairY.Draw();
+
+	// Draw the bullet
+	pDemo->bullet.Draw();
 
 	pDemo->swapChain->Present(0, 0);
 };

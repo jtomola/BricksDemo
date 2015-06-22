@@ -31,6 +31,9 @@
     <ClInclude Include="Crosshair.h">
       <Filter>Files</Filter>
     </ClInclude>
+    <ClInclude Include="Bullet.h">
+      <Filter>Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -52,6 +55,9 @@
       <Filter>Files</Filter>
     </ClCompile>
     <ClCompile Include="Crosshair.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Bullet.cpp">
       <Filter>Files</Filter>
     </ClCompile>
   </ItemGroup>

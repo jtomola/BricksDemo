@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "Brick.h"
 #include "Crosshair.h"
+#include "Bullet.h"
 
 #define NUM_BRICKS 30
 
@@ -40,6 +41,7 @@ private:
 	static Demo *privGetInstance();
 
 	void privRotateCamera(const float elapsedTime);
+	void privFireBullet(const float elapsedTime);
 
 	HWND privCreateGraphicsWindow(HINSTANCE hInstance, int nCmdShow, const char* windowName, const int Width, const int Height);
 	void privInitDevice();
@@ -62,6 +64,7 @@ private:
 	Brick						bricks[NUM_BRICKS];
 	Crosshair					crosshairX;
 	Crosshair					crosshairY;
+	Bullet						bullet;
 
 	// Window and D3D device info
 	HWND						window;
