@@ -8,6 +8,8 @@
 #include "Camera.h"
 #include "Brick.h"
 
+#define NUM_BRICKS 30
+
 // This class represents the whole brick demo. It initializes Direct3D, then handles all gameplay and rendering
 class Demo
 {
@@ -55,7 +57,8 @@ private:
 	};
 
 	Camera						cam;
-	Brick						brick;
+	Brick						ground;
+	Brick						bricks[NUM_BRICKS];
 
 	// Window and D3D device info
 	HWND						window;

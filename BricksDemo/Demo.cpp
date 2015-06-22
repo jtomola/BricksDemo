@@ -11,7 +11,7 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Constructor
 Demo::Demo()
-	:	cam(), brick(),
+	:	cam(), ground(), bricks(),
 		window(0), swapChain(0), device(0), deviceCon(0),
 		backBufferView(0), depthTexture(0), depthView(0),
 		vShader(0), pShader(0), inputLayout(0), rastState(0),
@@ -20,6 +20,27 @@ Demo::Demo()
 		modelView(), projection(), lightInfo(), globalLightDir(), color(),
 		running(0)
 {
+	// Set positions and of our bricks
+	ground.color = Vect(0.0f, 0.0f, 0.0f, 1.0f);
+	ground.pos = Vect(0.0f, -2.5f, 0.0f);
+	ground.scale = Vect(1000.0f, 5.0f, 3000.0f);
+
+	Vect colors[4];
+	colors[0] = Vect(1.0f, 0.0f, 0.0f, 1.0f);
+	colors[1] = Vect(0.0f, 1.0f, 0.0f, 1.0f);
+	colors[2] = Vect(0.0f, 0.0f, 1.0f, 1.0f);
+	colors[3] = Vect(0.0f, 0.5f, 0.5f, 1.0f);
+
+	for (int i = 0; i < 5; i++)
+	{
+		for (int j = 0; j < 6; j++)
+		{ 
+			int index = i * 6 + j;
+			bricks[index].scale = Vect(20.0f, 20.0f, 20.f);
+			bricks[index].color = colors[((j % 4) + i) % 4];
+			bricks[index].pos = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
+		}
+	}
 };
 
 // Destructor
@@ -168,7 +189,12 @@ void Demo::Draw()
 	// Clear the depth buffer to 1.0 (max depth)
 	pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	pDemo->brick.Draw();
+	for (int i = 0; i < NUM_BRICKS; i++)
+	{
+		pDemo->bricks[i].Draw();
+	}
+
+	pDemo->ground.Draw();
 
 	pDemo->swapChain->Present(0, 0);
 };
@@ -182,7 +208,7 @@ void Demo::Run()
 	// Set up camera
 	p->cam.setViewport(0, 0, GAME_WIDTH, GAME_HEIGHT);
 	p->cam.setPerspective(35.0f, float(GAME_WIDTH) / float(GAME_HEIGHT), 1.0f, 4500.0f);
-	p->cam.setOrientAndPosition(Vect(0.0f, 1.0f, 0.0f), Vect(0.0f, 0.0f, -10.0f), Vect(0.0f, 0.0f, 0.0f));
+	p->cam.setOrientAndPosition(Vect(0.0f, 1.0f, 0.0f), Vect(0.0f, 50.0f, -10.0f), Vect(0.0f, 50.0f, 0.0f));
 	p->cam.updateCamera();
 	p->projection = p->cam.getProjMatrix();
 	p->projection.T();

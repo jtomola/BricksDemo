@@ -10,7 +10,7 @@ public:
 
 	void Draw();
 
-private:
+public:
 	Vect pos;
 	Vect scale;
 	Vect color;
