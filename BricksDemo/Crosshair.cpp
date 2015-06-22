@@ -16,24 +16,11 @@ void Crosshair::Draw()
 	Matrix Scale;
 	Scale.setScale(scale[0], scale[1], scale[2]);
 
-	Matrix Rot = Demo::GetCamera()->getViewMatrix();
-	Rot[12] = Rot[13] = Rot[14] = 0.0f;
-	Rot.T();
-
-	//Matrix ModelView(Scale);
-	Matrix ModelView = Scale * Rot * Trans * Demo::GetCamera()->getViewMatrix();
+	// Don't need view matrix, since these will always be drawn in the same position
+	Matrix ModelView = Scale * Trans;
 
 	Demo::SetModelView(ModelView);
 	Demo::SetColorInfo(color);
 
 	Demo::GetDeviceContext()->DrawIndexed(12 * 3, 0, 0);
 };
-
-void Crosshair::Update(const float timeIn)
-{
-	// Grab our camera
-	Camera* pCam = Demo::GetCamera();
-
-	//this->pos = pCam->vPos - pCam->vDir * 1.005f;
-	this->pos = pCam->vPos - pCam->vDir * 2.005f;
-}

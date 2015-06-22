@@ -9,7 +9,6 @@ public:
 	Crosshair();
 
 	void Draw();
-	void Update(const float timeIn);
 
 public:
 	Vect pos;

@@ -26,11 +26,11 @@ Demo::Demo()
 	ground.scale = Vect(1000.0f, 5.0f, 3000.0f);
 
 	// Setup crosshairs
-	crosshairX.pos = Vect(0.0f, 0.0f, 0.0f);
-	crosshairX.scale = Vect(0.1f, 0.005f, 0.01f);
+	crosshairX.pos = Vect(0.0f, 0.0f, -1.005f);
+	crosshairX.scale = Vect(0.05f, 0.0025f, 0.01f);
 
-	crosshairY.pos = Vect(0.0f, 0.0f, 0.0f);
-	crosshairY.scale = Vect(0.005f, 0.1f, 0.01f);
+	crosshairY.pos = Vect(0.0f, 0.0f, -1.005f);
+	crosshairY.scale = Vect(0.0025f, 0.05f, 0.01f);
 
 	Vect colors[4];
 	colors[0] = Vect(1.0f, 0.0f, 0.0f, 1.0f);
@@ -94,9 +94,9 @@ void Demo::privRotateCamera(const float elapsedTime)
 	// Now we need to rotate the camera if right key is pressed
 	if (rmbPressed)
 	{
-		float rotDist = 45.0f * MATH_PI / 180.0f;
-		this->cam.rotateXLocal(rotDist * mouseYMovement);
-		this->cam.rotateYGlobal(rotDist * mouseXMovement);
+		float rotDist = 90.0f * MATH_PI / 180.0f;
+		this->cam.rotateXLocal(rotDist * -mouseYMovement);
+		this->cam.rotateYGlobal(rotDist * -mouseXMovement);
 	}
 
 	this->cam.updateCamera();
@@ -177,9 +177,6 @@ void Demo::Update()
 
 	// Rotate camera
 	pDemo->privRotateCamera(elapsedTime);
-
-	pDemo->crosshairX.Update(elapsedTime);
-	pDemo->crosshairY.Update(elapsedTime);
 };
 
 void Demo::Draw()
@@ -493,6 +490,9 @@ void Demo::privInitDevice()
 	viewport.MaxDepth = 1.0f;
 
 	deviceCon->RSSetViewports(1, &viewport);
+
+	// Hide the cursor
+	ShowCursor(false);
 };
 
 void Demo::privShutDownDevice()
