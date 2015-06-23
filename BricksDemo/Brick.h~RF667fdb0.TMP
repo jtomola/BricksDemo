@@ -1,17 +1,17 @@
-#ifndef CROSSHAIR_H
-#define CROSSHAIR_H
+#ifndef BRICK_H
+#define BRICK_H
 
 #include "Vect.h"
 
-class Crosshair
+class Brick
 {
 public:
-	Crosshair();
+	Brick();
 
 	void Draw();
 
 public:
-	Vect position;
+	Vect pos;
 	Vect scale;
 	Vect color;
 };

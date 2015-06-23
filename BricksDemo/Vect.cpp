@@ -156,6 +156,17 @@ float Vect::magSqr() const
     return this->vx * this->vx + this->vy * this->vy + this->vz * this->vz;
 }
 
+bool Vect::isZero(const float tolerance /*= 0.0001f*/) const
+{
+	bool retBool = true;
+
+	retBool &= ((this->v[0] >= -tolerance) && (this->v[0] <= tolerance));
+	retBool &= ((this->v[1] >= -tolerance) && (this->v[1] <= tolerance));
+	retBool &= ((this->v[2] >= -tolerance) && (this->v[2] <= tolerance));
+
+	return retBool;
+}
+
 Vect Vect::operator*(const Matrix& matrixIn) const
 {
     Vect returnVect;

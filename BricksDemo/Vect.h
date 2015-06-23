@@ -52,6 +52,9 @@ public:
 	float mag() const;
 	float magSqr() const;
 
+	bool isZero(const float tolerance = 0.0001f) const;
+
+
 private:
 	union {
 		float v[4];

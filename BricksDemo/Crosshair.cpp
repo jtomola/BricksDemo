@@ -2,7 +2,7 @@
 #include "Demo.h"
 
 Crosshair::Crosshair()
-	:	pos(0.0f, 0.0f, 0.0f),
+	:	position(0.0f, 0.0f, 0.0f),
 		scale(0.0f, 0.0f, 0.0f),
 		color(1.0f, 1.0f, 1.0f, 1.0f)
 {
@@ -11,7 +11,7 @@ Crosshair::Crosshair()
 void Crosshair::Draw()
 {
 	Matrix Trans;
-	Trans.setTrans(pos[0], pos[1], pos[2]);
+	Trans.setTrans(position[0], position[1], position[2]);
 
 	Matrix Scale;
 	Scale.setScale(scale[0], scale[1], scale[2]);

@@ -22,14 +22,15 @@ Demo::Demo()
 {
 	// Set positions and of our bricks
 	ground.color = Vect(0.2f, 0.2f, 0.2f, 1.0f);
-	ground.pos = Vect(0.0f, -2.5f, 0.0f);
+	ground.position = Vect(0.0f, -2.5f, 0.0f);
 	ground.scale = Vect(1000.0f, 5.0f, 3000.0f);
+	ground.inverseMass = 0.0f;
 
 	// Setup crosshairs
-	crosshairX.pos = Vect(0.0f, 0.0f, -1.005f);
+	crosshairX.position = Vect(0.0f, 0.0f, -1.005f);
 	crosshairX.scale = Vect(0.05f, 0.0025f, 0.01f);
 
-	crosshairY.pos = Vect(0.0f, 0.0f, -1.005f);
+	crosshairY.position = Vect(0.0f, 0.0f, -1.005f);
 	crosshairY.scale = Vect(0.0025f, 0.05f, 0.01f);
 
 	// Set the 4 colors for our bricks
@@ -47,7 +48,8 @@ Demo::Demo()
 			int index = i * 6 + j;
 			bricks[index].scale = Vect(20.0f, 20.0f, 20.f);
 			bricks[index].color = colors[((j % 4) + i) % 4];
-			bricks[index].pos = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
+			bricks[index].position = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
+			bricks[index].inverseMass = 0.2f;
 		}
 	}
 };
@@ -199,11 +201,19 @@ void Demo::Update()
 	elapsedTime;
 	lastTime = currTime;
 
+	// Max frame time
+	if (elapsedTime >= 0.05f) elapsedTime = 0.05f;
+
 	// Rotate camera
 	pDemo->privRotateCamera(elapsedTime);
 	pDemo->privFireBullet(elapsedTime);
 
 	pDemo->bullet.Update(elapsedTime);
+
+	for (int i = 0; i < NUM_BRICKS; i++)
+	{
+		pDemo->bricks[i].Update(elapsedTime);
+	}
 };
 
 void Demo::Draw()
