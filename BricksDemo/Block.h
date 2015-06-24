@@ -1,14 +1,14 @@
-#ifndef BRICK_H
-#define BRICK_H
+#ifndef BLOCK_H
+#define BLOCK_H
 
 #include "Vect.h"
 #include "Matrix.h"
 #include "Quat.h"
 
-class Brick
+class Block
 {
 public:
-	Brick();
+	Block();
 
 	void Draw();
 	void Update(const float elapsedTime);
@@ -24,11 +24,16 @@ public:
 	Quat                rotation;
 	Vect                angVelocity;
 	Vect                angAcceleration;
+	Vect				force;
+	Vect				torque;
 
 	Vect				scale;
 	Vect				color;
 
 	float               inverseMass;
+	bool				gravity;
+	bool				active;
 };
+
 
 #endif

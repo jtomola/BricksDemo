@@ -20,7 +20,7 @@ Demo::Demo()
 		modelView(), projection(), lightInfo(), globalLightDir(), color(),
 		running(0)
 {
-	// Set positions and of our bricks
+	// Setup ground
 	ground.color = Vect(0.2f, 0.2f, 0.2f, 1.0f);
 	ground.position = Vect(0.0f, -2.5f, 0.0f);
 	ground.scale = Vect(1000.0f, 5.0f, 3000.0f);
@@ -29,7 +29,6 @@ Demo::Demo()
 	// Setup crosshairs
 	crosshairX.position = Vect(0.0f, 0.0f, -1.005f);
 	crosshairX.scale = Vect(0.05f, 0.0025f, 0.01f);
-
 	crosshairY.position = Vect(0.0f, 0.0f, -1.005f);
 	crosshairY.scale = Vect(0.0025f, 0.05f, 0.01f);
 
@@ -40,7 +39,7 @@ Demo::Demo()
 	colors[2] = Vect(0.0f, 0.0f, 1.0f, 1.0f);
 	colors[3] = Vect(1.0f, 1.0f, 0.0f, 1.0f);
 
-	// Create the bricks
+	// Setup the bricks
 	for (int i = 0; i < 5; i++)
 	{
 		for (int j = 0; j < 6; j++)
@@ -52,7 +51,15 @@ Demo::Demo()
 			bricks[index].inverseMass = 0.2f;
 		}
 	}
+
+	// Setup our bullet
+	bullet.scale = Vect(2.0f, 2.0f, 2.f);
+	bullet.color = Vect(0.0f, 0.0f, 0.0f, 1.0f);
+	bullet.position = Vect(0.0f, 0.0f, 0.0f);
+	bullet.inverseMass = 0.2f;
+	bullet.gravity = false;
 };
+
 
 // Destructor
 Demo::~Demo()
@@ -122,7 +129,7 @@ void Demo::privFireBullet(const float elapsedTime)
 	if (lmbPressed && currTime >= waitTime)
 	{
 		currTime = 0.0f;
-		this->bullet.pos = this->cam.vPos;
+		this->bullet.position = this->cam.vPos;
 		this->bullet.velocity = this->cam.vDir * -500.0f;
 		this->bullet.active = 1;
 	}
@@ -241,6 +248,9 @@ void Demo::Draw()
 		pDemo->bricks[i].Draw();
 	}
 
+	// Draw the bullet
+	pDemo->bullet.Draw();
+
 	// Now we're making sure our crosshairs are always fully lit.
 	// This allows us to get away without writing another shader
 	pDemo->lightInfo.direction = Vect(0.0f, 0.0f, 1.0f);
@@ -249,9 +259,6 @@ void Demo::Draw()
 	// Draw crosshairs
 	pDemo->crosshairX.Draw();
 	pDemo->crosshairY.Draw();
-
-	// Draw the bullet
-	pDemo->bullet.Draw();
 
 	pDemo->swapChain->Present(0, 0);
 };

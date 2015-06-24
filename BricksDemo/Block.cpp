@@ -1,7 +1,7 @@
-#include "Brick.h"
+#include "Block.h"
 #include "Demo.h"
 
-Brick::Brick()
+Block::Block()
 	:	transformMatrix(),
 		inverseInertiaTensor(),
 		inverseInertiaTensorWorld(),
@@ -11,15 +11,21 @@ Brick::Brick()
 		rotation(),
 		angVelocity(),
 		angAcceleration(),
+		force(),
+		torque(),
 		scale(20.0f, 20.0f, 20.0f),
 		color(1.0f, 0.0f, 0.0f, 1.0f),
-		inverseMass(0.0f)
+		inverseMass(0.0f),
+		gravity(true),
+		active(true)
 
 {
 };
 
-void Brick::Draw()
+void Block::Draw()
 {
+	if (!active) return;
+
 	Matrix Trans;
 	Trans.setTrans(position[0], position[1], position[2]);
 
@@ -35,8 +41,10 @@ void Brick::Draw()
 	Demo::GetDeviceContext()->DrawIndexed(12 * 3, 0, 0);
 };
 
-void Brick::Update(const float elapsedTime)
+void Block::Update(const float elapsedTime)
 {
+	if (!active) return;
+
 	// Return if mass is infinite (ground)
 	if (inverseMass <= 0.0f)
 	{
@@ -54,11 +62,18 @@ void Brick::Update(const float elapsedTime)
 		this->rotation = this->rotation * q;
 	}
 
-	// Add gravity
-	Vect usedAcceleration = this->acceleration + Vect(0.0f, -100.0f, 0.0f);
+	// Update acceleration
+	this->acceleration.set(0.0f, 0.0f, 0.0f);
+	// Apply gravity
+	if (this->gravity) this->acceleration += Vect (0.0f, -100.0f, 0.0f);
+	this->acceleration += (force * inverseMass);
+
+	// Update angular acceleration
+	this->angAcceleration.set(0.0f, 0.0f, 0.0f);
+	this->angAcceleration += torque * this->inverseInertiaTensorWorld;
 
 	// Update velocity and angular velocity
-	this->velocity += (usedAcceleration * elapsedTime);
+	this->velocity += (acceleration * elapsedTime);
 	this->angVelocity += (this->angAcceleration * elapsedTime);
 
 	// Damp our velocities a bit
@@ -68,11 +83,12 @@ void Brick::Update(const float elapsedTime)
 	// Calculate transform matrices and world inverse inertia tensor
 	this->CalculateDerivedData();
 
-	this->acceleration.set(Vect(0.0f, 0.0f, 0.0f));
-	this->angAcceleration.set(Vect(0.0f, 0.0f, 0.0f));
+	// Zero out our torques and forces
+	this->force.set(0.0f, 0.0f, 0.0f);
+	this->torque.set(0.0f, 0.0f, 0.0f);
 };
 
-void Brick::CalculateDerivedData()
+void Block::CalculateDerivedData()
 {
 	// Set our transform matrix
 	Matrix Trans;

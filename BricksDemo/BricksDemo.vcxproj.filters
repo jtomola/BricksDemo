@@ -25,16 +25,13 @@
     <ClInclude Include="Camera.h">
       <Filter>Files</Filter>
     </ClInclude>
-    <ClInclude Include="Brick.h">
-      <Filter>Files</Filter>
-    </ClInclude>
     <ClInclude Include="Crosshair.h">
       <Filter>Files</Filter>
     </ClInclude>
-    <ClInclude Include="Bullet.h">
+    <ClInclude Include="Quat.h">
       <Filter>Files</Filter>
     </ClInclude>
-    <ClInclude Include="Quat.h">
+    <ClInclude Include="Block.h">
       <Filter>Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -54,16 +51,13 @@
     <ClCompile Include="Camera.cpp">
       <Filter>Files</Filter>
     </ClCompile>
-    <ClCompile Include="Brick.cpp">
-      <Filter>Files</Filter>
-    </ClCompile>
     <ClCompile Include="Crosshair.cpp">
       <Filter>Files</Filter>
     </ClCompile>
-    <ClCompile Include="Bullet.cpp">
+    <ClCompile Include="Quat.cpp">
       <Filter>Files</Filter>
     </ClCompile>
-    <ClCompile Include="Quat.cpp">
+    <ClCompile Include="Block.cpp">
       <Filter>Files</Filter>
     </ClCompile>
   </ItemGroup>

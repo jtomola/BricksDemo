@@ -6,9 +6,8 @@
 #include "Vect.h"
 #include "Matrix.h"
 #include "Camera.h"
-#include "Brick.h"
 #include "Crosshair.h"
-#include "Bullet.h"
+#include "Block.h"
 
 #define NUM_BRICKS 30
 
@@ -60,11 +59,11 @@ private:
 	};
 
 	Camera						cam;
-	Brick						ground;
-	Brick						bricks[NUM_BRICKS];
+	Block						ground;
+	Block						bricks[NUM_BRICKS];
 	Crosshair					crosshairX;
 	Crosshair					crosshairY;
-	Bullet						bullet;
+	Block						bullet;
 
 	// Window and D3D device info
 	HWND						window;
