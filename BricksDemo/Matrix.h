@@ -40,6 +40,8 @@ public:
     // Special matrix functions
     void T();
     Matrix getT() const;
+	float det() const;
+	Matrix getInv() const;
 
     // Overloaded bracket operators for getting
     const float operator[](const int indexIn) const;
@@ -62,7 +64,7 @@ public:
     Matrix operator* (const float s) const;
     Matrix& operator*= (const float s);
 
-private:
+public:
 
 	union {
 

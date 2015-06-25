@@ -69,20 +69,24 @@
   <ItemGroup>
     <ClInclude Include="Block.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CollisionCheck.h" />
     <ClInclude Include="Crosshair.h" />
     <ClInclude Include="D3DHeader.h" />
     <ClInclude Include="Demo.h" />
     <ClInclude Include="Matrix.h" />
+    <ClInclude Include="PhysicsContact.h" />
     <ClInclude Include="Quat.h" />
     <ClInclude Include="Vect.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CollisionCheck.cpp" />
     <ClCompile Include="Crosshair.cpp" />
     <ClCompile Include="Demo.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matrix.cpp" />
+    <ClCompile Include="PhysicsContact.cpp" />
     <ClCompile Include="Quat.cpp" />
     <ClCompile Include="Vect.cpp" />
   </ItemGroup>

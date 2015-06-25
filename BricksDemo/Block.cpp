@@ -100,3 +100,26 @@ void Block::CalculateDerivedData()
 	// Transform our inertial tensor into world space
 	this->inverseInertiaTensorWorld = Rot * this->inverseInertiaTensor* Rot.getT();
 };
+
+void Block::CalcInertiaTensor()
+{
+	// Mass should be set already
+	if (inverseMass == 0.0f)
+	{
+		this->inverseInertiaTensor = Matrix();
+		this->inverseInertiaTensor[15] = 1.0f;
+	}
+	else
+	{
+		Matrix inertialTensor;
+		float mass = 1.0f / inverseMass;
+		inertialTensor.setScale((scale[1] * scale[1] + scale[2] * scale[2]) * mass / 12.0f,
+			(scale[0] * scale[0] + scale[2] * scale[2]) * mass / 12.0f,
+			(scale[0] * scale[0] + scale[1] * scale[1]) * mass / 12.0f);
+
+		inverseInertiaTensor = inertialTensor.getInv();
+	}
+
+
+}
+

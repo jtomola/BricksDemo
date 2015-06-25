@@ -13,6 +13,7 @@ public:
 	void Draw();
 	void Update(const float elapsedTime);
 	void CalculateDerivedData();
+	void CalcInertiaTensor();
 
 	Matrix              transformMatrix;
 	Matrix              inverseInertiaTensor;

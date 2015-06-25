@@ -183,6 +183,46 @@ Matrix Matrix::getT() const
     return Matrix(col0, col1, col2, col3);
 }
 
+// Determinant of matrix
+float Matrix::det() const
+{
+	float det0 = _m0* (_m5*(_m10*_m15 - _m11*_m14) - _m6*(_m9*_m15 - _m11*_m13) + _m7*(_m9*_m14 - _m10*_m13));
+	float det1 = -_m1* (_m4*(_m10*_m15 - _m11*_m14) - _m6*(_m8*_m15 - _m11*_m12) + _m7*(_m8*_m14 - _m10*_m12));
+	float det2 = _m2* (_m4*(_m9*_m15 - _m11*_m13) - _m5*(_m8*_m15 - _m11*_m12) + _m7*(_m8*_m13 - _m9*_m12));
+	float det3 = -_m3* (_m4*(_m9*_m14 - _m10*_m13) - _m5*(_m8*_m14 - _m10*_m12) + _m6*(_m8*_m13 - _m9*_m12));
+
+	return det0 + det1 + det2 + det3;
+}
+
+Matrix Matrix::getInv() const
+{
+	Matrix b;
+	b._m0 = _m6*_m11*_m13 - _m7*_m10*_m13 + _m7*_m9*_m14 - _m5*_m11*_m14 - _m6*_m9*_m15 + _m5*_m10*_m15;
+	b._m1 = _m3*_m10*_m13 - _m2*_m11*_m13 - _m3*_m9*_m14 + _m1*_m11*_m14 + _m2*_m9*_m15 - _m1*_m10*_m15;
+	b._m2 = _m2*_m7*_m13 - _m3*_m6*_m13 + _m3*_m5*_m14 - _m1*_m7*_m14 - _m2*_m5*_m15 + _m1*_m6*_m15;
+	b._m3 = _m3*_m6*_m9 - _m2*_m7*_m9 - _m3*_m5*_m10 + _m1*_m7*_m10 + _m2*_m5*_m11 - _m1*_m6*_m11;
+	b._m4 = _m7*_m10*_m12 - _m6*_m11*_m12 - _m7*_m8*_m14 + _m4*_m11*_m14 + _m6*_m8*_m15 - _m4*_m10*_m15;
+	b._m5 = _m2*_m11*_m12 - _m3*_m10*_m12 + _m3*_m8*_m14 - _m0*_m11*_m14 - _m2*_m8*_m15 + _m0*_m10*_m15;
+	b._m6 = _m3*_m6*_m12 - _m2*_m7*_m12 - _m3*_m4*_m14 + _m0*_m7*_m14 + _m2*_m4*_m15 - _m0*_m6*_m15;
+	b._m7 = _m2*_m7*_m8 - _m3*_m6*_m8 + _m3*_m4*_m10 - _m0*_m7*_m10 - _m2*_m4*_m11 + _m0*_m6*_m11;
+	b._m8 = _m5*_m11*_m12 - _m7*_m9*_m12 + _m7*_m8*_m13 - _m4*_m11*_m13 - _m5*_m8*_m15 + _m4*_m9*_m15;
+	b._m9 = _m3*_m9*_m12 - _m1*_m11*_m12 - _m3*_m8*_m13 + _m0*_m11*_m13 + _m1*_m8*_m15 - _m0*_m9*_m15;
+	b._m10 = _m1*_m7*_m12 - _m3*_m5*_m12 + _m3*_m4*_m13 - _m0*_m7*_m13 - _m1*_m4*_m15 + _m0*_m5*_m15;
+	b._m11 = _m3*_m5*_m8 - _m1*_m7*_m8 - _m3*_m4*_m9 + _m0*_m7*_m9 + _m1*_m4*_m11 - _m0*_m5*_m11;
+	b._m12 = _m6*_m9*_m12 - _m5*_m10*_m12 - _m6*_m8*_m13 + _m4*_m10*_m13 + _m5*_m8*_m14 - _m4*_m9*_m14;
+	b._m13 = _m1*_m10*_m12 - _m2*_m9*_m12 + _m2*_m8*_m13 - _m0*_m10*_m13 - _m1*_m8*_m14 + _m0*_m9*_m14;
+	b._m14 = _m2*_m5*_m12 - _m1*_m6*_m12 - _m2*_m4*_m13 + _m0*_m6*_m13 + _m1*_m4*_m14 - _m0*_m5*_m14;
+	b._m15 = _m1*_m6*_m8 - _m2*_m5*_m8 + _m2*_m4*_m9 - _m0*_m6*_m9 - _m1*_m4*_m10 + _m0*_m5*_m10;
+
+	float f = 1.0f / (this->det());
+
+	b *= f;
+
+	return b;
+}
+
+
+
 const float Matrix::operator[](const int indexIn) const
 {
 	assert(indexIn >= 0 && indexIn <= 15);

@@ -41,6 +41,7 @@ private:
 
 	void privRotateCamera(const float elapsedTime);
 	void privFireBullet(const float elapsedTime);
+	void privCheckCollisions(const float elapsedTime);
 
 	HWND privCreateGraphicsWindow(HINSTANCE hInstance, int nCmdShow, const char* windowName, const int Width, const int Height);
 	void privInitDevice();

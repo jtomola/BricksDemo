@@ -34,6 +34,12 @@
     <ClInclude Include="Block.h">
       <Filter>Files</Filter>
     </ClInclude>
+    <ClInclude Include="PhysicsContact.h">
+      <Filter>Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionCheck.h">
+      <Filter>Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -58,6 +64,12 @@
       <Filter>Files</Filter>
     </ClCompile>
     <ClCompile Include="Block.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicsContact.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CollisionCheck.cpp">
       <Filter>Files</Filter>
     </ClCompile>
   </ItemGroup>
