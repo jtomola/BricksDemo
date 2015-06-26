@@ -50,6 +50,8 @@ void Block::Update(const float elapsedTime)
 	{
 		return;
 	}
+	
+	if (!velocity.isZero()) this->gravity = true;
 
 	// Update position
 	this->position += (this->velocity * elapsedTime);

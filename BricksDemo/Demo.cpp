@@ -51,9 +51,9 @@ Demo::Demo()
 			int index = i * 6 + j;
 			bricks[index].scale = Vect(20.0f, 20.0f, 20.f);
 			bricks[index].color = colors[((j % 4) + i) % 4];
-			//bricks[index].position = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
+			bricks[index].position = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
 			//bricks[index].position = Vect(-500.0f + 30.0f * i * 6 + j * 30.0f, 100.0f, -500.0f);
-			bricks[index].position = Vect(0.0f, 50.0f + 30.0f * i * 6 + j * 30.0f, -500.0f);
+			//bricks[index].position = Vect(0.0f, 50.0f + 30.0f * i * 6 + j * 30.0f, -500.0f);
 			bricks[index].inverseMass = 0.2f;
 			bricks[index].CalcInertiaTensor();
 		}
@@ -64,8 +64,8 @@ Demo::Demo()
 	bullet.color = Vect(0.0f, 0.0f, 0.0f, 1.0f);
 	bullet.position = Vect(0.0f, 0.0f, 0.0f);
 	bullet.inverseMass = 0.2f;
-	bullet.CalcInertiaTensor();
 	bullet.gravity = false;
+	bullet.CalcInertiaTensor();
 };
 
 
@@ -160,6 +160,18 @@ void Demo::privCheckCollisions(const float timeIn)
 		}
 	}
 
+	// Check all bricks against bullet
+	for (int i = 0; i < NUM_BRICKS; i++)
+	{ 
+		if (CheckColliding(bullet, bricks[i], contact))
+		{
+			contact.CalculateData(timeIn);
+			contact.ChangeVelocity();
+			contact.ChangePosition();
+			contact.Reset();
+		}
+	}
+
 	// Now check all bricks with each other
 	for (int i = 0; i < NUM_BRICKS; i++)
 	{
@@ -174,6 +186,8 @@ void Demo::privCheckCollisions(const float timeIn)
 			}
 		}
 	}
+
+	return;
 };
 
 ID3D11Device* Demo::GetDevice()

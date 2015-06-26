@@ -186,6 +186,14 @@ bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 		contact.blocks[1] = &blockTwo;
 	}
 
-	return 1;
+	if (contact.penetration > 0.0f)
+	{
+		return 1;
+	}
+	else
+	{
+		contact.Reset();
+		return 0;
+	}
 };
 

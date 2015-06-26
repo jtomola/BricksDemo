@@ -175,12 +175,14 @@ void Matrix::T()
 
 Matrix Matrix::getT() const
 {
-    Vect col0(_m0, _m4, _m8, _m12);
-    Vect col1(_m1, _m5, _m9, _m13);
-    Vect col2(_m2, _m6, _m10, _m14);
-    Vect col3(_m3, _m7, _m11, _m15);
+	Matrix returnMatrix;
 
-    return Matrix(col0, col1, col2, col3);
+    returnMatrix.v0 =  Vect(_m0, _m4, _m8, _m12);
+    returnMatrix.v1 = Vect(_m1, _m5, _m9, _m13);
+    returnMatrix.v2 = Vect(_m2, _m6, _m10, _m14);
+    returnMatrix.v3 = Vect(_m3, _m7, _m11, _m15);
+
+	return returnMatrix;
 }
 
 // Determinant of matrix

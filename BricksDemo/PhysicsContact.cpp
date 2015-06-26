@@ -28,7 +28,7 @@ void PhysicsContact::CalculateDesiredDeltaVelocity(const float timeIn)
 	}
 
     // Limit restitution if low velocity
-    const float velocityLimit = 5.0f;
+    const float velocityLimit = 1.0f;
     float actingRestitution = this->restitution;
 
 	Vect scaledNormal = timeIn * normal;
@@ -36,10 +36,10 @@ void PhysicsContact::CalculateDesiredDeltaVelocity(const float timeIn)
 	// Need to remove velocity from this frame's acceleration.
 	// Removing jitter for resting contacts
 	velocityFromAcc = blocks[0]->acceleration.dot(-1.0f * scaledNormal) * timeIn;
-	velocityFromAcc += blocks[0]->acceleration.cross(relPos[0])[2] * timeIn;
+	velocityFromAcc += blocks[0]->angAcceleration.cross(relPos[0])[2] * timeIn;
 
 	velocityFromAcc -= blocks[1]->acceleration.dot(-1.0f * scaledNormal) * timeIn;
-	velocityFromAcc -= blocks[1]->acceleration.cross(relPos[1])[2] * timeIn;
+	velocityFromAcc -= blocks[1]->angAcceleration.cross(relPos[1])[2] * timeIn;
 
     if (abs(contactVelocity[2]) < velocityLimit)
     {
@@ -59,7 +59,7 @@ void PhysicsContact::Reset()
     this->normal.set(0.0f, 0.0f, 0.0f);
     this->blocks[0] = 0;
     this->blocks[1] = 0;
-    this->restitution = 0.0f;
+    this->restitution = 0.25f;
     this->penetration = 0.0f;
 };
 
