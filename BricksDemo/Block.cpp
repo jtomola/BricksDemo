@@ -16,7 +16,7 @@ Block::Block()
 		scale(20.0f, 20.0f, 20.0f),
 		color(1.0f, 0.0f, 0.0f, 1.0f),
 		inverseMass(0.0f),
-		gravityNow(false),
+		gravityNow(true),
 		gravityEver(true),
 		active(true)
 
@@ -130,3 +130,43 @@ void Block::CalcInertiaTensor()
 
 }
 
+bool Block::PointInsideBlock(const Vect& pointIn)
+{
+	// Need to convert this point into the coordinate space of our block
+
+	// This is orthonormal, can take transpose to get inverse
+	Matrix WorldToLocal;
+	WorldToLocal.set(this->rotation);
+	WorldToLocal.T();
+
+	// Now apply opposite of translation
+	WorldToLocal[12] = -position[0];
+	WorldToLocal[13] = -position[1];
+	WorldToLocal[14] = -position[2];
+
+	Vect localPoint = pointIn * WorldToLocal;
+
+	Vect halfsize = this->scale * 0.5f;
+
+	bool retBool = true;
+	retBool &= (pointIn[0] > -halfsize[0] && pointIn[0] < halfsize[0]);
+	retBool &= (pointIn[1] > -halfsize[1] && pointIn[1] < halfsize[1]);
+	retBool &= (pointIn[2] > -halfsize[2] && pointIn[2] < halfsize[2]);
+
+	return retBool;
+};
+
+Vect Block::GetCorner(const MinMax x, const MinMax y, const MinMax z)
+{
+	Vect corner = this->position;
+	Vect xDiff = this->scale[0] * 0.5f * this->transformMatrix.v[0];
+	if (x == MIN) xDiff *= -1.0f;
+	Vect yDiff = this->scale[1] * 0.5f * this->transformMatrix.v[1];
+	if (y == MIN) yDiff *= -1.0f;
+	Vect zDiff = this->scale[2] * 0.5f * this->transformMatrix.v[2];
+	if (z == MIN) zDiff *= -1.0f;
+
+	corner += (xDiff + yDiff + zDiff);
+
+	return corner;
+};

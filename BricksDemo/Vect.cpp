@@ -167,6 +167,22 @@ bool Vect::isZero(const float tolerance /*= 0.0001f*/) const
 	return retBool;
 }
 
+bool Vect::isEqual(const Vect& vectIn, const float tolerance /*= 0.0001f*/) const
+{
+	bool retBool = true;
+
+	float tmp = 0.0f;
+
+	tmp = this->v[0] - vectIn.v[0];
+	retBool &= ((tmp >= -tolerance) && (tmp <= tolerance));
+	tmp = this->v[1] - vectIn.v[1];
+	retBool &= ((tmp >= -tolerance) && (tmp <= tolerance));
+	tmp = this->v[2] - vectIn.v[2];
+	retBool &= ((tmp >= -tolerance) && (tmp <= tolerance));
+
+	return retBool;
+};
+
 Vect Vect::operator*(const Matrix& matrixIn) const
 {
     Vect returnVect;

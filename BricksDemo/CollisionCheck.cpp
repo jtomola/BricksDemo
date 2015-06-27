@@ -147,6 +147,49 @@ bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 	{
 		// We've got a vertex of box two on a face of box one.
 		fillDataPointFace(blockOne, blockTwo, diffCenter, contact, bestIndex, penetration);
+
+		// Need to check if any axes are aligned. Might need to adjust contact point to center it on a face
+		Vect bestAxis = transOne.v[bestIndex];
+
+		// See if any of other block's axes align with this one
+		bool matchingAxis = false;
+		for (int k = 0; k < 3; k++)
+		{
+			if (bestAxis.isEqual(transTwo.v[k], 0.001f) ||
+				bestAxis.isEqual(transTwo.v[k] * -1.0f, 0.001f))
+			{
+				matchingAxis = true;
+			}
+		}
+
+		if (matchingAxis)
+		{
+			// See how many of block 1's corners are inside block 2
+			Vect pointSum(0.0f, 0.0f, 0.0f);
+			int numPointsInside = 0;
+
+			Vect corner;
+			corner = blockOne.GetCorner(MIN, MIN, MIN);
+			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
+			corner = blockOne.GetCorner(MIN, MIN, MAX);
+			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
+			corner = blockOne.GetCorner(MIN, MAX, MIN);
+			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
+			corner = blockOne.GetCorner(MIN, MAX, MAX);
+			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
+			corner = blockOne.GetCorner(MAX, MIN, MIN);
+			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
+			corner = blockOne.GetCorner(MAX, MIN, MAX);
+			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
+			corner = blockOne.GetCorner(MAX, MAX, MIN);
+			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
+			corner = blockOne.GetCorner(MAX, MAX, MAX);
+
+			if (numPointsInside == 4)
+			{
+				contact.contactPoint = pointSum * (1.0f / float(numPointsInside));
+			}
+		}
 	}
 	else if (bestIndex < 6)
 	{

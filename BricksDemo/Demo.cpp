@@ -61,13 +61,12 @@ Demo::Demo()
 		}
 	}
 
-//	bricks[0].position[1] -= 20.0f;
-
 	// Setup our bullet
 	bullet.scale = Vect(2.0f, 2.0f, 2.f);
 	bullet.color = Vect(0.0f, 0.0f, 0.0f, 1.0f);
 	bullet.position = Vect(0.0f, 1000.0f, 0.0f);
 	bullet.inverseMass = 0.5f;
+	bullet.gravityNow = false;
 	bullet.gravityEver = false;
 	bullet.CalcInertiaTensor();
 };
@@ -142,7 +141,7 @@ void Demo::privFireBullet(const float elapsedTime)
 	{
 		currTime = 0.0f;
 		this->bullet.position = this->cam.vPos;
-		this->bullet.velocity = this->cam.vDir * -500.0f;
+		this->bullet.velocity = this->cam.vDir * -1000.0f;
 		this->bullet.rotation = Quat(0.0f, 0.0f, 0.0f, 1.0f);
 		this->bullet.angVelocity = Vect(0.0f, 0.0f, 0.0f);
 		this->bullet.active = 1;
@@ -165,7 +164,8 @@ void Demo::privCheckCollisions(const float timeIn)
 	// Check all bricks against ground
 	for (int i = 0; i < NUM_BRICKS; i++)
 	{ 
-		if (CheckColliding(ground, bricks[i], contact))
+		//if (CheckColliding(ground, bricks[i], contact))
+		if (CheckColliding(bricks[i], ground, contact))
 		{
 			contact.CalculateData(timeIn);
 			contact.ChangeVelocity();
@@ -619,7 +619,7 @@ void Demo::privInitDevice()
 	deviceCon->RSSetViewports(1, &viewport);
 
 	// Hide the cursor
-	ShowCursor(false);
+	//ShowCursor(false);
 };
 
 void Demo::privShutDownDevice()

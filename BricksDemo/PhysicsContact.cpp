@@ -46,7 +46,7 @@ void PhysicsContact::CalculateDesiredDeltaVelocity(const float timeIn)
         actingRestitution = 0.0f;
     }
 
-	if (contactVelocity[2] <= velocityFromAcc + 0.001f)
+	if ( abs(contactVelocity[2]) <= velocityFromAcc + 0.001f)
 	{
         actingRestitution = 0.0f;
 	}
@@ -59,7 +59,7 @@ void PhysicsContact::Reset()
     this->normal.set(0.0f, 0.0f, 0.0f);
     this->blocks[0] = 0;
     this->blocks[1] = 0;
-    this->restitution = 0.25f;
+    this->restitution = 0.5f;
     this->penetration = 0.0f;
 };
 

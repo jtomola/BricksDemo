@@ -53,7 +53,7 @@ public:
 	float magSqr() const;
 
 	bool isZero(const float tolerance = 0.0001f) const;
-
+	bool isEqual(const Vect& vectIn, const float tolerance = 0.0001f) const;
 
 private:
 	union {

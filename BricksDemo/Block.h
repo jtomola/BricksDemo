@@ -5,6 +5,12 @@
 #include "Matrix.h"
 #include "Quat.h"
 
+enum MinMax
+{
+	MIN,
+	MAX
+};
+
 class Block
 {
 public:
@@ -14,6 +20,8 @@ public:
 	void Update(const float elapsedTime);
 	void CalculateDerivedData();
 	void CalcInertiaTensor();
+	bool PointInsideBlock(const Vect& pointIn);
+	Vect GetCorner(const MinMax x, const MinMax y, const MinMax z);
 
 	Matrix              transformMatrix;
 	Matrix              inverseInertiaTensor;
