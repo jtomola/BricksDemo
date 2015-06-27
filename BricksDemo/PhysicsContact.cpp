@@ -70,6 +70,11 @@ void PhysicsContact::ChangeVelocity()
 	Vect velocityChange[2];
 	Vect angVelocityChange[2];
 
+	Vect& velocity0 = blocks[0]->velocity;
+	Vect& velocity1 = blocks[1]->velocity;
+	Vect& angVelocity0 = blocks[0]->angVelocity;
+	Vect& angVelocity1 = blocks[1]->angVelocity;
+
 	// Need to calculate the impulse now
 	// We are assuming no friction here
 	Vect deltaVelWorld = (relPos[0]).cross(normal);
@@ -163,7 +168,7 @@ void PhysicsContact::CalculateBasis()
     Vect basisVectY;
 
     // Check whether z-axis is closer to x or y axis
-    if (abs(normal[0]) > abs(normal[0]))
+    if (abs(normal[0]) > abs(normal[1]))
     {
         // scaling factor to normalize results
         const float scale = 1.0f / sqrt(normal[2] * normal[2] + normal[0] * normal[0]);

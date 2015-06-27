@@ -52,8 +52,8 @@ Demo::Demo()
 			int index = i * 6 + j;
 			bricks[index].scale = Vect(20.0f, 20.0f, 20.f);
 			bricks[index].color = colors[((j % 4) + i) % 4];
-			//bricks[index].position = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
-			bricks[index].position = Vect(-500.0f + 30.0f * i * 6 + j * 30.0f, 100.0f, -500.0f);
+			bricks[index].position = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
+			//bricks[index].position = Vect(-500.0f + 30.0f * i * 6 + j * 30.0f, 100.0f, -500.0f);
 			//bricks[index].position = Vect(0.0f, 50.0f + 30.0f * i * 6 + j * 30.0f, -500.0f);
 			//bricks[index].rotation.setRotXYZ(0.0f, 45.0f * MATH_PI / 180.0f, 45.0f * MATH_PI / 180.0f);
 			bricks[index].inverseMass = 0.2f;
@@ -66,9 +66,9 @@ Demo::Demo()
 	// Setup our bullet
 	bullet.scale = Vect(2.0f, 2.0f, 2.f);
 	bullet.color = Vect(0.0f, 0.0f, 0.0f, 1.0f);
-	bullet.position = Vect(0.0f, 0.0f, 0.0f);
+	bullet.position = Vect(0.0f, 1000.0f, 0.0f);
 	bullet.inverseMass = 0.5f;
-	bullet.gravity = false;
+	bullet.gravityEver = false;
 	bullet.CalcInertiaTensor();
 };
 
@@ -292,6 +292,12 @@ void Demo::Update()
 	}
 
 	pDemo->privCheckCollisions(elapsedTime);
+
+	Vect brickPos[NUM_BRICKS];
+	for (int i = 0; i < NUM_BRICKS; i++)
+	{
+		brickPos[i] = pDemo->bricks[i].position;
+	}
 };
 
 void Demo::Draw()

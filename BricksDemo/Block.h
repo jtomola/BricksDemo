@@ -32,7 +32,8 @@ public:
 	Vect				color;
 
 	float               inverseMass;
-	bool				gravity;
+	bool				gravityNow;
+	bool				gravityEver;
 	bool				active;
 };
 

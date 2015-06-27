@@ -16,7 +16,8 @@ Block::Block()
 		scale(20.0f, 20.0f, 20.0f),
 		color(1.0f, 0.0f, 0.0f, 1.0f),
 		inverseMass(0.0f),
-		gravity(true),
+		gravityNow(false),
+		gravityEver(true),
 		active(true)
 
 {
@@ -55,7 +56,7 @@ void Block::Update(const float elapsedTime)
 		return;
 	}
 	
-	if (!velocity.isZero()) this->gravity = true;
+	if (!velocity.isZero() && gravityEver) this->gravityNow = true;
 
 	// Update position
 	this->position += (this->velocity * elapsedTime);
@@ -71,7 +72,7 @@ void Block::Update(const float elapsedTime)
 	// Update acceleration
 	this->acceleration.set(0.0f, 0.0f, 0.0f);
 	// Apply gravity
-	if (this->gravity) this->acceleration += Vect (0.0f, -100.0f, 0.0f);
+	if (this->gravityNow) this->acceleration += Vect (0.0f, -100.0f, 0.0f);
 	this->acceleration += (force * inverseMass);
 
 	// Update angular acceleration
@@ -83,7 +84,7 @@ void Block::Update(const float elapsedTime)
 	this->angVelocity += (this->angAcceleration * elapsedTime);
 
 	// Damp our velocities a bit
-	this->velocity *= powf(0.85f, elapsedTime);
+	this->velocity *= powf(0.5f, elapsedTime);
 	this->angVelocity *= powf(0.5f, elapsedTime);
 
 	// Calculate transform matrices and world inverse inertia tensor
