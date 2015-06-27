@@ -16,7 +16,7 @@ Block::Block()
 		scale(20.0f, 20.0f, 20.0f),
 		color(1.0f, 0.0f, 0.0f, 1.0f),
 		inverseMass(0.0f),
-		gravityNow(true),
+		gravityNow(false),
 		gravityEver(true),
 		active(true)
 
@@ -149,9 +149,9 @@ bool Block::PointInsideBlock(const Vect& pointIn)
 	Vect halfsize = this->scale * 0.5f;
 
 	bool retBool = true;
-	retBool &= (pointIn[0] > -halfsize[0] && pointIn[0] < halfsize[0]);
-	retBool &= (pointIn[1] > -halfsize[1] && pointIn[1] < halfsize[1]);
-	retBool &= (pointIn[2] > -halfsize[2] && pointIn[2] < halfsize[2]);
+	retBool &= (localPoint[0] >= -halfsize[0] && localPoint[0] <= halfsize[0]);
+	retBool &= (localPoint[1] >= -halfsize[1] && localPoint[1] <= halfsize[1]);
+	retBool &= (localPoint[2] >= -halfsize[2] && localPoint[2] <= halfsize[2]);
 
 	return retBool;
 };

@@ -161,6 +161,10 @@ void Demo::privCheckCollisions(const float timeIn)
 		contact.Reset();
 	}
 
+
+	int blah = 0;
+	blah++;
+
 	// Check all bricks against ground
 	for (int i = 0; i < NUM_BRICKS; i++)
 	{ 
@@ -173,6 +177,9 @@ void Demo::privCheckCollisions(const float timeIn)
 			contact.Reset();
 		}
 	}
+
+	int blah2 = 0;
+	blah2++;
 
 	// Check all bricks against bullet
 	for (int i = 0; i < NUM_BRICKS; i++)

@@ -60,6 +60,8 @@ void fillDataPointFace(
 
 bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 {
+	if (!blockOne.active || !blockTwo.active) return false;
+
 	// Calculate difference of centers
 	Matrix transOne = blockOne.transformMatrix;;
 	Matrix transTwo = blockTwo.transformMatrix;
@@ -184,6 +186,7 @@ bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 			corner = blockOne.GetCorner(MAX, MAX, MIN);
 			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
 			corner = blockOne.GetCorner(MAX, MAX, MAX);
+			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
 
 			if (numPointsInside == 4)
 			{
