@@ -7,6 +7,7 @@
 #include <time.h>
 #include "PhysicsContact.h"
 #include "CollisionCheck.h"
+#include <stdlib.h>
 
 // Callback needed to handle Window messages
 LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -189,15 +190,44 @@ void Demo::privCheckCollisions(const float timeIn)
 		if (CheckColliding(bullet, bricks[i], contact))
 		{
 			contact.CalculateData(timeIn);
+			/*
 			contact.ChangeVelocity();
 			contact.ChangePosition();
-			contact.Reset();
 			bullet.gravityNow = true;
+			*/
+
+			// Time to have some fun with all blocks within certain distance of this collision
+			for (int k = 0; k < NUM_BRICKS; k++)
+			{
+				Vect diffPos = bricks[k].position - contact.contactPoint;
+				float magSquared = diffPos.magSqr();
+				
+				if (magSquared < 1500.0f && bricks[k].position[1] >= bricks[i].position[1])
+				{
+					Vect velocityChange(diffPos[0] > 0 ? 30.0f : -30.0f, 300.0f, 0.0f);
+					bricks[k].velocity += velocityChange;
+
+					static int x = 987444303;
+					srand(x);
+					x += 5134;
+
+					Vect angVelocityChange(0.0f, 0.0f, 0.0f);
+					angVelocityChange[0] = (float)(rand() % 60 - 30);
+					angVelocityChange[1] = (float)(rand() % 60 - 30);
+					angVelocityChange[2] = (float)(rand() % 60 - 30);
+
+					bricks[k].angVelocity += angVelocityChange;
+				}
+			}
+
 			if (!this->timeSlowed)
 			{
 				this->slowTimer = 0.0f;
 				this->timeSlowed = true;
 			}
+			contact.Reset();
+			bullet.active = false;
+			break;
 		}
 	}
 
