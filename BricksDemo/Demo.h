@@ -42,6 +42,7 @@ private:
 	void privRotateCamera(const float elapsedTime);
 	void privFireBullet(const float elapsedTime);
 	void privCheckCollisions(const float elapsedTime);
+	void privCheckSlowTime(const float elapsedTime);
 
 	HWND privCreateGraphicsWindow(HINSTANCE hInstance, int nCmdShow, const char* windowName, const int Width, const int Height);
 	void privInitDevice();
@@ -98,7 +99,10 @@ private:
 	Vect						globalLightDir;
 	Vect						color;
 
-	bool running;
+	float						slowTimer;
+
+	bool						running;
+	bool						timeSlowed;
 };
 
 

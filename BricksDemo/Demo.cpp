@@ -20,7 +20,7 @@ Demo::Demo()
 		modelViewBuffer(0), projectionBuffer(0), lightBuffer(0),
 		colorBuffer(0), vertBuffer(0), indexBuffer(0),
 		modelView(), projection(), lightInfo(), globalLightDir(), color(),
-		running(0)
+		running(false), timeSlowed(false)
 {
 	// Setup ground
 	//ground.color = Vect(0.2f, 0.2f, 0.2f, 1.0f);
@@ -145,6 +145,7 @@ void Demo::privFireBullet(const float elapsedTime)
 		this->bullet.rotation = Quat(0.0f, 0.0f, 0.0f, 1.0f);
 		this->bullet.angVelocity = Vect(0.0f, 0.0f, 0.0f);
 		this->bullet.active = 1;
+		this->bullet.gravityNow = false;
 	}
 }
 
@@ -153,6 +154,7 @@ void Demo::privCheckCollisions(const float timeIn)
 	PhysicsContact contact;
 	contact.Reset();
 
+	// Check bullet and ground
 	if (CheckColliding(ground, bullet, contact))
 	{
 		contact.CalculateData(timeIn);
@@ -190,6 +192,12 @@ void Demo::privCheckCollisions(const float timeIn)
 			contact.ChangeVelocity();
 			contact.ChangePosition();
 			contact.Reset();
+			//bullet.gravityNow = true;
+			if (!this->timeSlowed)
+			{
+				this->slowTimer = 0.0f;
+				this->timeSlowed = true;
+			}
 		}
 	}
 
@@ -210,6 +218,18 @@ void Demo::privCheckCollisions(const float timeIn)
 
 	return;
 };
+
+void Demo::privCheckSlowTime(const float elapsedTime)
+{
+	if (!this->timeSlowed) return;
+
+	slowTimer += elapsedTime;
+	if (slowTimer > 4.0f)
+	{
+		slowTimer = 0.0f;
+		timeSlowed = false;
+	}
+}
 
 ID3D11Device* Demo::GetDevice()
 {
@@ -286,6 +306,14 @@ void Demo::Update()
 
 	// Max frame time
 	if (elapsedTime >= 0.05f) elapsedTime = 0.05f;
+
+	// First check to see if time is slowed
+	pDemo->privCheckSlowTime(elapsedTime);
+
+	if (pDemo->timeSlowed)
+	{
+		elapsedTime *= 0.15f;
+	}
 
 	// Rotate camera
 	pDemo->privRotateCamera(elapsedTime);
