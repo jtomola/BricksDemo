@@ -192,7 +192,7 @@ void Demo::privCheckCollisions(const float timeIn)
 			contact.ChangeVelocity();
 			contact.ChangePosition();
 			contact.Reset();
-			//bullet.gravityNow = true;
+			bullet.gravityNow = true;
 			if (!this->timeSlowed)
 			{
 				this->slowTimer = 0.0f;
@@ -537,6 +537,9 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void Demo::privInitDevice()
 {
+	UINT sampleCount = 8;
+	UINT sampleQuality = 1;
+
 	// create a struct to hold information about the swap chain
 	DXGI_SWAP_CHAIN_DESC scd;
 
@@ -551,8 +554,8 @@ void Demo::privInitDevice()
 	scd.BufferDesc.Height = GAME_HEIGHT;              
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = this->window;                 
-	scd.SampleDesc.Count = 1;                       
-	scd.SampleDesc.Quality = 0;                    
+	scd.SampleDesc.Count = sampleCount;                       
+	scd.SampleDesc.Quality = sampleQuality;                    
 	scd.Windowed = TRUE;                          
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
@@ -609,8 +612,8 @@ void Demo::privInitDevice()
 	descDepth.MipLevels = 1;
 	descDepth.ArraySize = 1;
 	descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	descDepth.SampleDesc.Count = 1;
-	descDepth.SampleDesc.Quality = 0;
+	descDepth.SampleDesc.Count = sampleCount;
+	descDepth.SampleDesc.Quality = sampleQuality;
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
 	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 	descDepth.CPUAccessFlags = 0;
@@ -626,8 +629,8 @@ void Demo::privInitDevice()
 	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
 	ZeroMemory(&descDSV, sizeof(descDSV));
 	descDSV.Format = descDepth.Format;
-	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	descDSV.Texture2D.MipSlice = 0;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+	//descDSV.Texture2D.MipSlice = 0;
 	result = device->CreateDepthStencilView(depthTexture, &descDSV, &depthView);
 	if (FAILED(result))
 	{
