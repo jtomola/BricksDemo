@@ -196,6 +196,21 @@ void Demo::privCheckCollisions(const float timeIn)
 			bullet.gravityNow = true;
 			*/
 
+#if 1
+			Vect velocityChange(0.0f, 200.0f, 0.0f);
+			bricks[i].velocity += velocityChange;
+
+			static int x = 987444303;
+			srand(x);
+			x += 5134;
+
+			Vect angVelocityChange(0.0f, 0.0f, 0.0f);
+			angVelocityChange[0] = (float)(rand() % 60 - 30);
+			angVelocityChange[1] = (float)(rand() % 60 - 30);
+			angVelocityChange[2] = (float)(rand() % 60 - 30);
+
+			bricks[i].angVelocity += angVelocityChange;
+#else
 			// Time to have some fun with all blocks within certain distance of this collision
 			for (int k = 0; k < NUM_BRICKS; k++)
 			{
@@ -204,7 +219,7 @@ void Demo::privCheckCollisions(const float timeIn)
 				
 				if (magSquared < 1500.0f && bricks[k].position[1] >= bricks[i].position[1])
 				{
-					Vect velocityChange(diffPos[0] > 0 ? 30.0f : -30.0f, 300.0f, 0.0f);
+					Vect velocityChange(diffPos[0] > 0 ? 30.0f : -30.0f, 200.0f, 0.0f);
 					bricks[k].velocity += velocityChange;
 
 					static int x = 987444303;
@@ -219,6 +234,7 @@ void Demo::privCheckCollisions(const float timeIn)
 					bricks[k].angVelocity += angVelocityChange;
 				}
 			}
+#endif
 
 			if (!this->timeSlowed)
 			{
