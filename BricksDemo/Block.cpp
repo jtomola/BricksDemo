@@ -29,11 +29,15 @@ void Block::Draw()
 	Matrix Trans;
 	Trans.setTrans(position[0], position[1], position[2]);
 
+	Matrix Rot;
+	Rot.set(rotation);
+
 	Matrix Scale;
 	Scale.setScale(scale[0], scale[1], scale[2]);
 
 	//Matrix ModelView(Scale);
-	Matrix ModelView = Scale * Trans * Demo::GetCamera()->getViewMatrix();
+	Matrix ModelView = Scale * Rot * Trans * Demo::GetCamera()->getViewMatrix();
+	//Matrix ModelView = Scale * Trans * Demo::GetCamera()->getViewMatrix();
 
 	Demo::SetModelView(ModelView);
 	Demo::SetColorInfo(color);
@@ -79,8 +83,8 @@ void Block::Update(const float elapsedTime)
 	this->angVelocity += (this->angAcceleration * elapsedTime);
 
 	// Damp our velocities a bit
-	this->velocity *= powf(0.95f, elapsedTime);
-	this->angVelocity *= powf(0.95f, elapsedTime);
+	this->velocity *= powf(0.85f, elapsedTime);
+	this->angVelocity *= powf(0.5f, elapsedTime);
 
 	// Calculate transform matrices and world inverse inertia tensor
 	this->CalculateDerivedData();

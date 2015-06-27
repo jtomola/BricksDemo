@@ -52,8 +52,8 @@ void Quat::setRotXYZ(const float rotxIn, const float rotyIn, const float rotzIn)
 	Quat RotZ;
 
 	RotX.setAxisAngle(Vect(1.0f, 0.0f, 0.0f), rotxIn);
-	RotY.setAxisAngle(Vect(0.0f, 1.0f, 0.0f), rotxIn);
-	RotZ.setAxisAngle(Vect(0.0f, 0.0f, 1.0f), rotxIn);
+	RotY.setAxisAngle(Vect(0.0f, 1.0f, 0.0f), rotyIn);
+	RotZ.setAxisAngle(Vect(0.0f, 0.0f, 1.0f), rotzIn);
 
     this->set( RotX * RotY * RotZ);
 };

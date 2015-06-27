@@ -90,23 +90,50 @@ bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 	unsigned bestSingleAxis = bestIndex;
 
 	Vect axis6 = transOne.v0.cross(transTwo.v0);
-	TEST_AXIS(axis6, 6);
+	if (!axis6.isZero())
+	{
+		TEST_AXIS(axis6, 6);
+	}
 	Vect axis7 = transOne.v0.cross(transTwo.v1);
-	TEST_AXIS(axis7, 7);
+	if (!axis7.isZero())
+	{
+		TEST_AXIS(axis7, 7);
+	}
 	Vect axis8 = transOne.v0.cross(transTwo.v2);
-	TEST_AXIS(axis8, 8);
+	if (!axis8.isZero())
+	{
+		TEST_AXIS(axis8, 8);
+	}
 	Vect axis9 = transOne.v1.cross(transTwo.v0);
-	TEST_AXIS(axis9, 9);
+	if (!axis9.isZero())
+	{
+		TEST_AXIS(axis9, 9);
+	}
 	Vect axis10 = transOne.v1.cross(transTwo.v1);
-	TEST_AXIS(axis10, 10);
+	if (!axis10.isZero())
+	{
+		TEST_AXIS(axis10, 10);
+	}
 	Vect axis11 = transOne.v1.cross(transTwo.v2);
-	TEST_AXIS(axis11, 11);
+	if (!axis11.isZero())
+	{
+		TEST_AXIS(axis11, 11);
+	}
 	Vect axis12 = transOne.v2.cross(transTwo.v0);
-	TEST_AXIS(axis12, 12);
+	if (!axis12.isZero())
+	{
+		TEST_AXIS(axis12, 12);
+	}
 	Vect axis13 = transOne.v2.cross(transTwo.v1);
-	TEST_AXIS(axis13, 13);
+	if (!axis13.isZero())
+	{
+		TEST_AXIS(axis13, 13);
+	}
 	Vect axis14 = transOne.v2.cross(transTwo.v2);
-	TEST_AXIS(axis14, 14);
+	if (!axis14.isZero())
+	{
+		TEST_AXIS(axis14, 14);
+	}
 
 	// Make sure we've got a result.
 	if (bestIndex == 0xffffff) return 0;

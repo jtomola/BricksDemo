@@ -23,7 +23,8 @@ Demo::Demo()
 		running(0)
 {
 	// Setup ground
-	ground.color = Vect(0.2f, 0.2f, 0.2f, 1.0f);
+	//ground.color = Vect(0.2f, 0.2f, 0.2f, 1.0f);
+	ground.color = Vect(0.0f, 0.4f, 0.0f, 1.0f);
 	ground.position = Vect(0.0f, -2.5f, 0.0f);
 	ground.scale = Vect(1000.0f, 5.0f, 3000.0f);
 	ground.inverseMass = 0.0f;
@@ -51,19 +52,22 @@ Demo::Demo()
 			int index = i * 6 + j;
 			bricks[index].scale = Vect(20.0f, 20.0f, 20.f);
 			bricks[index].color = colors[((j % 4) + i) % 4];
-			bricks[index].position = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
-			//bricks[index].position = Vect(-500.0f + 30.0f * i * 6 + j * 30.0f, 100.0f, -500.0f);
+			//bricks[index].position = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
+			bricks[index].position = Vect(-500.0f + 30.0f * i * 6 + j * 30.0f, 100.0f, -500.0f);
 			//bricks[index].position = Vect(0.0f, 50.0f + 30.0f * i * 6 + j * 30.0f, -500.0f);
+			//bricks[index].rotation.setRotXYZ(0.0f, 45.0f * MATH_PI / 180.0f, 45.0f * MATH_PI / 180.0f);
 			bricks[index].inverseMass = 0.2f;
 			bricks[index].CalcInertiaTensor();
 		}
 	}
 
+//	bricks[0].position[1] -= 20.0f;
+
 	// Setup our bullet
 	bullet.scale = Vect(2.0f, 2.0f, 2.f);
 	bullet.color = Vect(0.0f, 0.0f, 0.0f, 1.0f);
 	bullet.position = Vect(0.0f, 0.0f, 0.0f);
-	bullet.inverseMass = 0.2f;
+	bullet.inverseMass = 0.5f;
 	bullet.gravity = false;
 	bullet.CalcInertiaTensor();
 };
@@ -139,6 +143,8 @@ void Demo::privFireBullet(const float elapsedTime)
 		currTime = 0.0f;
 		this->bullet.position = this->cam.vPos;
 		this->bullet.velocity = this->cam.vDir * -500.0f;
+		this->bullet.rotation = Quat(0.0f, 0.0f, 0.0f, 1.0f);
+		this->bullet.angVelocity = Vect(0.0f, 0.0f, 0.0f);
 		this->bullet.active = 1;
 	}
 }
@@ -147,6 +153,14 @@ void Demo::privCheckCollisions(const float timeIn)
 {
 	PhysicsContact contact;
 	contact.Reset();
+
+	if (CheckColliding(ground, bullet, contact))
+	{
+		contact.CalculateData(timeIn);
+		contact.ChangeVelocity();
+		contact.ChangePosition();
+		contact.Reset();
+	}
 
 	// Check all bricks against ground
 	for (int i = 0; i < NUM_BRICKS; i++)
@@ -287,7 +301,9 @@ void Demo::Draw()
 
 	// Since we're only passing modelview matrix to shader, need to put our light direction
 	// into view coordinates
-	pDemo->lightInfo.direction = pDemo->globalLightDir * pDemo->cam.getViewMatrix();
+	Matrix rotView = pDemo->cam.getViewMatrix();
+	rotView[12] = rotView[13] = rotView[14] = 0.0f;
+	pDemo->lightInfo.direction = pDemo->globalLightDir * rotView;
 	pDemo->deviceCon->UpdateSubresource(pDemo->lightBuffer, 0, nullptr, &pDemo->lightInfo, 0, 0);
 
 	// Clear background
@@ -336,7 +352,8 @@ void Demo::Run()
 	p->deviceCon->UpdateSubresource(p->projectionBuffer, 0, nullptr, &p->projection, 0, 0);
 
 	// Set up Lighting
-	Vect lightDir(20.0f, 50.0f, 100.0f);
+	Vect lightDir(20.0f, 100.0f, 100.0f);
+	//Vect lightDir(0.0f, 100.0f, 0.0f);
 	lightDir.norm();
 	Vect lightColor(1.0f, 1.0f, 1.0f, 1.0f);
 	p->lightInfo.color = lightColor;

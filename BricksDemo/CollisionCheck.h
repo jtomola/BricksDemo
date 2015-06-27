@@ -59,7 +59,7 @@ static inline bool tryAxis(
 	)
 {
 	// Make sure we have a normalized axis, and don't check almost parallel axes
-	if (axis.magSqr() < 0.0001) return true;
+	if (axis.magSqr() < 0.0001f) return true;
 	axis.norm();
 
 	// Calculate penetration on this axis
@@ -67,7 +67,8 @@ static inline bool tryAxis(
 
 	// Update smallest penetration if necessary
 	if (pen < 0.0f) return false;
-	if (pen <= smallestPenetration + 0.01f) {
+	//if (pen <= smallestPenetration + 0.01f) {
+	if (pen < smallestPenetration) {
 		smallestPenetration = pen;
 		smallestCase = index;
 	}
