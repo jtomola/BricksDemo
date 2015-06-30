@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "Crosshair.h"
 #include "Block.h"
+#include "MotionBlur.h"
 
 #define NUM_BRICKS 30
 
@@ -27,6 +28,9 @@ public:
 	// Accessors for window, D3D device, and D3D device context
 	static ID3D11Device* GetDevice();
 	static ID3D11DeviceContext* GetDeviceContext();
+	static ID3D11Texture2D* GetBackBuffer();
+	static ID3D11RenderTargetView* GetBackBufferView();
+	static ID3D11DepthStencilView* GetDepthView();
 	static HWND GetWindow();
 	static Camera* GetCamera();
 
@@ -61,6 +65,7 @@ private:
 	};
 
 	Camera						cam;
+	MotionBlur					motionBlur;
 	Block						ground;
 	Block						bricks[NUM_BRICKS];
 	Crosshair					crosshairX;
@@ -72,6 +77,7 @@ private:
 	IDXGISwapChain*				swapChain;
 	ID3D11Device*				device;
 	ID3D11DeviceContext*		deviceCon;
+	ID3D11Texture2D*			backBuffer;
 	ID3D11RenderTargetView*		backBufferView;
 	ID3D11Texture2D*			depthTexture;
 	ID3D11DepthStencilView*		depthView;
@@ -91,6 +97,9 @@ private:
 	// Vertex and index buffers
 	ID3D11Buffer*				vertBuffer;
 	ID3D11Buffer*				indexBuffer;
+
+	// Sampler state - needed for motion blur textures
+	ID3D11SamplerState*		sampler;
 
 	// Data for constant buffers
 	Matrix						modelView;

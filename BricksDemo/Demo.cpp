@@ -16,10 +16,10 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 Demo::Demo()
 	:	cam(), ground(), bricks(), crosshairX(), crosshairY(), bullet(),
 		window(0), swapChain(0), device(0), deviceCon(0),
-		backBufferView(0), depthTexture(0), depthView(0),
+		backBuffer(0), backBufferView(0), depthTexture(0), depthView(0),
 		vShader(0), pShader(0), inputLayout(0), rastState(0),
 		modelViewBuffer(0), projectionBuffer(0), lightBuffer(0),
-		colorBuffer(0), vertBuffer(0), indexBuffer(0),
+		colorBuffer(0), vertBuffer(0), indexBuffer(0), sampler(0),
 		modelView(), projection(), lightInfo(), globalLightDir(), color(),
 		running(false), timeSlowed(false)
 {
@@ -289,6 +289,24 @@ ID3D11DeviceContext* Demo::GetDeviceContext()
 	return pDemo->deviceCon;
 };
 
+ID3D11Texture2D* Demo::GetBackBuffer()
+{
+	Demo* pDemo = Demo::privGetInstance();
+	return pDemo->backBuffer;
+}
+
+ID3D11RenderTargetView* Demo::GetBackBufferView()
+{
+	Demo* pDemo = Demo::privGetInstance();
+	return pDemo->backBufferView;
+}
+
+ID3D11DepthStencilView* Demo::GetDepthView()
+{
+	Demo* pDemo = Demo::privGetInstance();
+	return pDemo->depthView;
+}
+
 HWND Demo::GetWindow()
 {
 	Demo* pDemo = Demo::privGetInstance();
@@ -335,6 +353,10 @@ void Demo::Initialize(HINSTANCE hInstance, int nCmdShow)
 	pDemo->privInitDevice();
 	pDemo->privCreateShader();
 	pDemo->privCreateBuffers();
+
+	// initialize motion blur
+	pDemo->motionBlur.initialize(200);
+	pDemo->motionBlur.setBlurTime(0.08f);
 };
 
 void Demo::Update()
@@ -386,6 +408,32 @@ void Demo::Draw()
 	Demo* pDemo = Demo::privGetInstance();
 	UNUSED(pDemo);
 
+	// Set our render target
+	pDemo->deviceCon->OMSetRenderTargets(0, 0, 0);
+	//pDemo->deviceCon->OMSetRenderTargets(1, &pDemo->motionBlur.mainRenderView, pDemo->depthView);
+	pDemo->deviceCon->OMSetRenderTargets(1, &pDemo->backBufferView, pDemo->depthView);
+
+	// Set our shaders as active
+	pDemo->deviceCon->VSSetShader(pDemo->vShader, nullptr, 0);
+	pDemo->deviceCon->PSSetShader(pDemo->pShader, nullptr, 0);
+
+	// Set our constant buffers
+	pDemo->deviceCon->VSSetConstantBuffers(0, 1, &pDemo->modelViewBuffer);
+	pDemo->deviceCon->VSSetConstantBuffers(1, 1, &pDemo->projectionBuffer);
+	pDemo->deviceCon->VSSetConstantBuffers(2, 1, &pDemo->lightBuffer);
+	pDemo->deviceCon->PSSetConstantBuffers(3, 1, &pDemo->colorBuffer);
+
+	// Set vert buffer
+	UINT stride = 6 * sizeof(float);
+	UINT offset = 0;
+	pDemo->deviceCon->IASetVertexBuffers(0, 1, &pDemo->vertBuffer, &stride, &offset);
+
+	// Set index buffer
+	pDemo->deviceCon->IASetIndexBuffer(pDemo->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// Set input layout
+	pDemo->deviceCon->IASetInputLayout(pDemo->inputLayout);
+
 	// Since we're only passing modelview matrix to shader, need to put our light direction
 	// into view coordinates
 	Matrix rotView = pDemo->cam.getViewMatrix();
@@ -395,11 +443,11 @@ void Demo::Draw()
 
 	// Clear background
 	float color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	//pDemo->deviceCon->ClearRenderTargetView(pDemo->motionBlur.mainRenderView, (const float*)&color[0]);
 	pDemo->deviceCon->ClearRenderTargetView(pDemo->backBufferView, (const float*)&color[0]);
 
 	// Clear the depth buffer to 1.0 (max depth)
 	pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
-	//pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 0.0f, 0);
 
 	pDemo->ground.Draw();
 
@@ -419,6 +467,8 @@ void Demo::Draw()
 	// Draw crosshairs
 	pDemo->crosshairX.Draw();
 	pDemo->crosshairY.Draw();
+
+	//pDemo->motionBlur.draw();
 
 	pDemo->swapChain->Present(0, 0);
 };
@@ -478,6 +528,7 @@ void Demo::Run()
 		}
 	}
 
+	p->motionBlur.destroy();
 	p->privDestroyBuffers();
 	p->privDestroyShader();
 	p->privShutDownDevice();
@@ -583,8 +634,8 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void Demo::privInitDevice()
 {
-	UINT sampleCount = 8;
-	UINT sampleQuality = 1;
+	UINT sampleCount = 4;
+	UINT sampleQuality = 0;
 
 	// create a struct to hold information about the swap chain
 	DXGI_SWAP_CHAIN_DESC scd;
@@ -633,8 +684,7 @@ void Demo::privInitDevice()
 
 
 	// get the address of the back buffer
-	ID3D11Texture2D *pBackBuffer;
-	result = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+	result = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBuffer);
 	if (result == E_FAIL)
 	{
 		printf("Grabbing back buffer failed...\n");
@@ -642,13 +692,13 @@ void Demo::privInitDevice()
 	}
 
 	// use the back buffer address to create the render target
-	result = device->CreateRenderTargetView(pBackBuffer, NULL, &backBufferView);
+	result = device->CreateRenderTargetView(backBuffer, NULL, &backBufferView);
 	if (result == E_FAIL)
 	{
 		printf("Creating render target view failed...\n");
 		assert(0);
 	}
-	pBackBuffer->Release();
+	//pBackBuffer->Release();
 
 	// Create depth stencil texture
 	D3D11_TEXTURE2D_DESC descDepth;
@@ -701,6 +751,25 @@ void Demo::privInitDevice()
 	viewport.MaxDepth = 1.0f;
 
 	deviceCon->RSSetViewports(1, &viewport);
+
+	// Create our sampler state
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	HRESULT hr = device->CreateSamplerState(&sampDesc, &sampler);
+	if (FAILED(hr))
+	{
+		printf("Default sampler creation failed...\n");
+		assert(0);
+	}
+
+	// Set sampler state as active
+	deviceCon->PSSetSamplers(0, 1, &sampler);
 
 	// Hide the cursor
 	//ShowCursor(false);

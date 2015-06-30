@@ -40,6 +40,9 @@
     <ClInclude Include="CollisionCheck.h">
       <Filter>Files</Filter>
     </ClInclude>
+    <ClInclude Include="MotionBlur.h">
+      <Filter>Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -72,9 +75,15 @@
     <ClCompile Include="CollisionCheck.cpp">
       <Filter>Files</Filter>
     </ClCompile>
+    <ClCompile Include="MotionBlur.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="FlatColorWithLight.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="MotionBlur.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
