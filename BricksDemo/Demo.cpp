@@ -357,8 +357,8 @@ void Demo::Initialize(HINSTANCE hInstance, int nCmdShow)
 	pDemo->privCreateBuffers();
 
 	// initialize motion blur
-	pDemo->motionBlur.initialize(50);
-	pDemo->motionBlur.setBlurTime(0.02f);
+	pDemo->motionBlur.initialize(100);
+	pDemo->motionBlur.setBlurTime(0.16f);
 };
 
 void Demo::Update()

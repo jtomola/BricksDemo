@@ -57,10 +57,10 @@ float4 PShader( PS_INPUT input) : SV_Target
 		texCoord.z = float(currIndex);
 		pixelColor += percentageEach * Textures.Sample(Sampler0, texCoord);
 
-		currIndex++;
-		if (currIndex >= numTextures)
+		currIndex--;
+		if (currIndex < 0)
 		{
-			currIndex = 0;
+			currIndex = numTextures - 1;
 		}
 	} 
 

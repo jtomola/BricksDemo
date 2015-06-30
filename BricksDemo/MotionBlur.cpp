@@ -380,9 +380,10 @@ void MotionBlur::draw()
 	}
 	else
 	{
-		cbBlur.startIndex = currIndex;
-		cbBlur.stopIndex = (currIndex + numFramesToUse) % numTextures;
+		cbBlur.stopIndex = currIndex;
+		cbBlur.startIndex = (currIndex + numFramesToUse) % numTextures;
 	}
+
 	cbBlur.percentageEach = 1.0f / float(numFramesToUse);
 	cbBlur.numTextures = numFramesToUse;
 
