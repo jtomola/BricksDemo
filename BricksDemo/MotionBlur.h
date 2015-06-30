@@ -33,8 +33,8 @@ public:
 	ID3D11ShaderResourceView*	blurSRVs;
 	ID3D11Texture2D*			mainRenderTexture;
 	ID3D11RenderTargetView*		mainRenderView;
-	//ID3D11Texture2D*			depthTexture;
-	//ID3D11DepthStencilView*		depthView;
+	ID3D11Texture2D*			depthTexture;
+	ID3D11DepthStencilView*		depthView;
 	ID3D11RenderTargetView*		currRTV;
 	ID3D11Buffer*				blurInfoBuffer;
 

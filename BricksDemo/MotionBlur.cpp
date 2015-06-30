@@ -5,8 +5,8 @@
 MotionBlur::MotionBlur()
 	: blurTextures(0),
 	blurSRVs(0),
-	//depthTexture(0),
-	//depthView(0),
+	depthTexture(0),
+	depthView(0),
 	currRTV(0),
 	vertBuffer(0),
 	indexBuffer(0),
@@ -88,7 +88,6 @@ void MotionBlur::initialize(const int numTexturesIn)
 		assert(0);
 	}
 
-	/*
 	// Now create the depth buffer
 	textureDesc.ArraySize = 1;
 	textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -114,7 +113,6 @@ void MotionBlur::initialize(const int numTexturesIn)
 		printf("Creating depth view for motion blur failed...\n");
 		assert(0);
 	}
-	*/
 
 	// Set up the vertex buffer 
 	struct Triangle
@@ -163,6 +161,15 @@ void MotionBlur::initialize(const int numTexturesIn)
 	// Triangle list
 	Triangle tList[2];
 
+	tList[0].v1 = 1;
+	tList[0].v2 = 2;
+	tList[0].v3 = 3;
+
+	tList[1].v1 = 0;
+	tList[1].v2 = 1;
+	tList[1].v3 = 3;
+
+	/*
 	tList[0].v1 = 3;
 	tList[0].v2 = 2;
 	tList[0].v3 = 1;
@@ -170,6 +177,7 @@ void MotionBlur::initialize(const int numTexturesIn)
 	tList[1].v1 = 3;
 	tList[1].v2 = 1;
 	tList[1].v3 = 0;
+	*/
 
 	// Now need to create vertex and index buffers
 	D3D11_BUFFER_DESC bd;
@@ -326,8 +334,8 @@ void MotionBlur::destroy()
 	// Delete everything else
 	if (mainRenderTexture != 0) mainRenderTexture->Release(); mainRenderTexture = 0;
 	if (mainRenderView != 0) mainRenderView->Release(); mainRenderView = 0;
-	//if (depthTexture != 0) depthTexture->Release(); depthTexture = 0;
-	//if (depthView != 0) depthView->Release(); depthView = 0;
+	if (depthTexture != 0) depthTexture->Release(); depthTexture = 0;
+	if (depthView != 0) depthView->Release(); depthView = 0;
 	if (currRTV != 0) currRTV->Release(); currRTV = 0;
 	if (vertBuffer != 0) vertBuffer->Release(); vertBuffer = 0;
 	if (indexBuffer != 0) indexBuffer->Release(); indexBuffer = 0;
@@ -400,16 +408,22 @@ void MotionBlur::draw()
 
 	ID3D11Texture2D* backBuffer = Demo::GetBackBuffer();
 	ID3D11RenderTargetView* backBufferView = Demo::GetBackBufferView();
-	ID3D11DepthStencilView* depthView = Demo::GetDepthView();
+	ID3D11DepthStencilView* mainDepthView = Demo::GetDepthView();
 
 	// Now render to screen, using blur shader
 	devCon->OMSetRenderTargets(0, 0, 0);
-	devCon->OMSetRenderTargets(1, &backBufferView, depthView);
+	devCon->OMSetRenderTargets(1, &backBufferView, mainDepthView);
 
 	// Clear these
-	Vect fillColor = Vect(0.5f, 0.5f, 0.5f, 1.0f);
-	devCon->ClearRenderTargetView(backBufferView, (const float*)&fillColor);
-	devCon->ClearDepthStencilView(depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	//Vect fillColor = Vect(0.5f, 0.5f, 0.5f, 1.0f);
+	//devCon->ClearRenderTargetView(backBufferView, (const float*)&fillColor);
+	//devCon->ClearDepthStencilView(mainDepthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	// Set our shaders as active
+	devCon->VSSetShader(vShader, nullptr, 0);
+	devCon->PSSetShader(pShader, nullptr, 0);
+	// Set input layout
+	devCon->IASetInputLayout(inputLayout);
 
 	// First need to resolve our multi sampled drawing
 	ID3D11ShaderResourceView* nullView = 0;
@@ -422,10 +436,6 @@ void MotionBlur::draw()
 	devCon->UpdateSubresource(blurInfoBuffer, 0, nullptr, &cbBlur, 0, 0);
 	devCon->PSSetConstantBuffers(0, 1, &blurInfoBuffer);
 
-	// Set our shaders as active
-	devCon->VSSetShader(vShader, nullptr, 0);
-	devCon->PSSetShader(pShader, nullptr, 0);
-
 	// Set vert buffer
 	UINT stride = sizeof(float) * 5;
 	UINT offset = 0;
@@ -433,9 +443,6 @@ void MotionBlur::draw()
 
 	// Set index buffer
 	devCon->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	// Set input layout
-	devCon->IASetInputLayout(inputLayout);
 
 	devCon->DrawIndexed(6, 0, 0);
 

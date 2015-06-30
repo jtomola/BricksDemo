@@ -355,7 +355,7 @@ void Demo::Initialize(HINSTANCE hInstance, int nCmdShow)
 	pDemo->privCreateBuffers();
 
 	// initialize motion blur
-	pDemo->motionBlur.initialize(200);
+	pDemo->motionBlur.initialize(50);
 	pDemo->motionBlur.setBlurTime(0.08f);
 };
 
@@ -408,10 +408,15 @@ void Demo::Draw()
 	Demo* pDemo = Demo::privGetInstance();
 	UNUSED(pDemo);
 
+#define MOTION_BLUR 1
+
 	// Set our render target
-	pDemo->deviceCon->OMSetRenderTargets(0, 0, 0);
-	//pDemo->deviceCon->OMSetRenderTargets(1, &pDemo->motionBlur.mainRenderView, pDemo->depthView);
+	//pDemo->deviceCon->OMSetRenderTargets(0, 0, 0);
+#if MOTION_BLUR
+	pDemo->deviceCon->OMSetRenderTargets(1, &pDemo->motionBlur.mainRenderView, pDemo->motionBlur.depthView);
+#else
 	pDemo->deviceCon->OMSetRenderTargets(1, &pDemo->backBufferView, pDemo->depthView);
+#endif
 
 	// Set our shaders as active
 	pDemo->deviceCon->VSSetShader(pDemo->vShader, nullptr, 0);
@@ -443,10 +448,11 @@ void Demo::Draw()
 
 	// Clear background
 	float color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	//pDemo->deviceCon->ClearRenderTargetView(pDemo->motionBlur.mainRenderView, (const float*)&color[0]);
+	pDemo->deviceCon->ClearRenderTargetView(pDemo->motionBlur.mainRenderView, (const float*)&color[0]);
 	pDemo->deviceCon->ClearRenderTargetView(pDemo->backBufferView, (const float*)&color[0]);
 
 	// Clear the depth buffer to 1.0 (max depth)
+	pDemo->deviceCon->ClearDepthStencilView(pDemo->motionBlur.depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	pDemo->ground.Draw();
@@ -468,7 +474,7 @@ void Demo::Draw()
 	pDemo->crosshairX.Draw();
 	pDemo->crosshairY.Draw();
 
-	//pDemo->motionBlur.draw();
+	pDemo->motionBlur.draw();
 
 	pDemo->swapChain->Present(0, 0);
 };
@@ -897,7 +903,7 @@ void Demo::privCreateShader()
 	//descRast.FrontCounterClockwise = true;
 	descRast.FrontCounterClockwise = false;
 	descRast.DepthClipEnable = true;
-	descRast.MultisampleEnable = false;
+	descRast.MultisampleEnable = true;
 
 	hr = this->device->CreateRasterizerState(&descRast, &rastState);
 	if (FAILED(hr))
