@@ -471,7 +471,7 @@ void Demo::Draw()
 
 	pDemo->motionBlur.draw();
 
-	pDemo->swapChain->Present(0, 0);
+	pDemo->swapChain->Present(1, 0);
 };
 
 // Run the demo
