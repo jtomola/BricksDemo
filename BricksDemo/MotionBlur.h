@@ -8,11 +8,11 @@
 struct CBBlur
 {
 	int startIndex;
-	int stopIndex;
+	int numUsed;
 	int numTextures;
 	float percentageEach;
 
-	CBBlur() : startIndex(0), stopIndex(0), numTextures(0), percentageEach(0) {};
+	CBBlur() : startIndex(0), numUsed(0), numTextures(0), percentageEach(0) {};
 };
 
 class MotionBlur

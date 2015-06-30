@@ -5,7 +5,7 @@
 cbuffer ConstBufferBlur : register(b0)
 {
 	int startIndex;
-	int stopIndex;
+	int numUsed;
 	int numTextures;
 	float percentageEach;
 };
@@ -52,15 +52,15 @@ float4 PShader( PS_INPUT input) : SV_Target
 
 	int currIndex = startIndex;
 
-	for (int i = 0; i < numTextures; i++)
+	for (int i = 0; i < numUsed; i++)
 	{
 		texCoord.z = float(currIndex);
 		pixelColor += percentageEach * Textures.Sample(Sampler0, texCoord);
 
-		currIndex--;
-		if (currIndex < 0)
+		currIndex++;
+		if (currIndex >= numTextures)
 		{
-			currIndex = numTextures - 1;
+			currIndex = 0;
 		}
 	} 
 

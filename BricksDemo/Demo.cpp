@@ -357,8 +357,8 @@ void Demo::Initialize(HINSTANCE hInstance, int nCmdShow)
 	pDemo->privCreateBuffers();
 
 	// initialize motion blur
-	pDemo->motionBlur.initialize(100);
-	pDemo->motionBlur.setBlurTime(0.32f);
+	pDemo->motionBlur.initialize(200);
+	pDemo->motionBlur.setBlurTime(0.5f);
 };
 
 void Demo::Update()
@@ -649,8 +649,8 @@ void Demo::privInitDevice()
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;  
 	scd.BufferDesc.Width = GAME_WIDTH;                  
 	scd.BufferDesc.Height = GAME_HEIGHT;               
-	scd.BufferDesc.RefreshRate.Numerator = 60;
-	scd.BufferDesc.RefreshRate.Denominator = 1;
+	//scd.BufferDesc.RefreshRate.Numerator = 60;
+	//scd.BufferDesc.RefreshRate.Denominator = 1;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = this->window;                 
 	scd.SampleDesc.Count = sampleCount;                       

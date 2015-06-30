@@ -1,6 +1,8 @@
 #include "MotionBlur.h"
 #include "Demo.h"
 #include <stdio.h>
+#include <cmath>
+#include <chrono>
 
 MotionBlur::MotionBlur()
 	: blurTextures(0),
@@ -356,9 +358,24 @@ void MotionBlur::draw()
 {
 	clock_t currTime;
 	currTime = clock();
-	float elapsedTime = (float) (currTime - lastTime) / CLOCKS_PER_SEC;
+	float elapsedTime = float(currTime - lastTime) / float(CLOCKS_PER_SEC);
 	lastTime = currTime;
 
+	// To prevent jitter, we need to average last frametimes
+	// This gets rid of quick changes
+	static float times[20];
+	static int counter = 0;
+	times[counter] = elapsedTime;
+	counter++;
+	if (counter >= 20) counter = 0;
+	float timeTotal = 0.0f;
+	for (int j = 0; j < 20; j++)
+	{
+		timeTotal = timeTotal + times[j];
+	}
+	float timeToUse = timeTotal / 20.0f;
+
+	// Make sure we're not using more frames than we've drawn yet
 	initCount++;
 	if (initCount > numTextures)
 	{
@@ -366,7 +383,8 @@ void MotionBlur::draw()
 	}
 
 	// Update blur info for shader
-	int numFramesToUse = int(blurTime / elapsedTime);
+	int numFramesToUse = (int) floor(blurTime / timeToUse + 0.5f);
+	if (numFramesToUse <= 0) numFramesToUse = 1;
 	if (numFramesToUse > initCount)
 	{
 		numFramesToUse = initCount;
@@ -376,25 +394,28 @@ void MotionBlur::draw()
 	{
 		numFramesToUse = numTextures;
 		cbBlur.startIndex = 0;
-		cbBlur.stopIndex = 0;
 	}
 	else
 	{
-		cbBlur.stopIndex = currIndex;
-		cbBlur.startIndex = (currIndex + numFramesToUse) % numTextures;
+		cbBlur.startIndex = currIndex;
 	}
 
 	cbBlur.percentageEach = 1.0f / float(numFramesToUse);
-	cbBlur.numTextures = numFramesToUse;
+	cbBlur.numUsed = numFramesToUse;
+	cbBlur.numTextures = numTextures;
 
 	if (!blurOn)
 	{
 		cbBlur.startIndex = currIndex;
-		cbBlur.stopIndex = currIndex + 1;
-		if (cbBlur.stopIndex >= cbBlur.numTextures) cbBlur.stopIndex = 0;
-		cbBlur.numTextures = 1;
+		cbBlur.numUsed = 1;
 		cbBlur.percentageEach = 1.0f;
 	}
+
+	static int numUsed[500];
+	static int currInd = 0;
+	numUsed[currInd] = cbBlur.numUsed;
+	currInd++;
+	if (currInd >= 500) currInd = 0;
 
 	ID3D11DeviceContext* devCon = Demo::GetDeviceContext();
 
