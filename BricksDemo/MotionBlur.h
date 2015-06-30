@@ -50,6 +50,7 @@ public:
 	int							currIndex;
 	int							numTextures;
 	int							initCount;
+	bool						blurOn;
 };
 
 #endif

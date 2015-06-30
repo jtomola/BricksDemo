@@ -196,7 +196,7 @@ void Demo::privCheckCollisions(const float timeIn)
 			bullet.gravityNow = true;
 			*/
 
-#if 1
+#if 0
 			Vect velocityChange(0.0f, 200.0f, 0.0f);
 			bricks[i].velocity += velocityChange;
 
@@ -240,6 +240,7 @@ void Demo::privCheckCollisions(const float timeIn)
 			{
 				this->slowTimer = 0.0f;
 				this->timeSlowed = true;
+				this->motionBlur.blurOn = true;
 			}
 			contact.Reset();
 			bullet.active = false;
@@ -274,6 +275,7 @@ void Demo::privCheckSlowTime(const float elapsedTime)
 	{
 		slowTimer = 0.0f;
 		timeSlowed = false;
+		motionBlur.blurOn = false;
 	}
 }
 
@@ -356,7 +358,7 @@ void Demo::Initialize(HINSTANCE hInstance, int nCmdShow)
 
 	// initialize motion blur
 	pDemo->motionBlur.initialize(50);
-	pDemo->motionBlur.setBlurTime(0.08f);
+	pDemo->motionBlur.setBlurTime(0.02f);
 };
 
 void Demo::Update()
@@ -408,15 +410,17 @@ void Demo::Draw()
 	Demo* pDemo = Demo::privGetInstance();
 	UNUSED(pDemo);
 
-#define MOTION_BLUR 1
+	// Clear background
+	float color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	pDemo->deviceCon->ClearRenderTargetView(pDemo->motionBlur.mainRenderView, (const float*)&color[0]);
+	pDemo->deviceCon->ClearRenderTargetView(pDemo->backBufferView, (const float*)&color[0]);
+
+	// Clear the depth buffer to 1.0 (max depth)
+	pDemo->deviceCon->ClearDepthStencilView(pDemo->motionBlur.depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	// Set our render target
-	//pDemo->deviceCon->OMSetRenderTargets(0, 0, 0);
-#if MOTION_BLUR
 	pDemo->deviceCon->OMSetRenderTargets(1, &pDemo->motionBlur.mainRenderView, pDemo->motionBlur.depthView);
-#else
-	pDemo->deviceCon->OMSetRenderTargets(1, &pDemo->backBufferView, pDemo->depthView);
-#endif
 
 	// Set our shaders as active
 	pDemo->deviceCon->VSSetShader(pDemo->vShader, nullptr, 0);
@@ -446,15 +450,6 @@ void Demo::Draw()
 	pDemo->lightInfo.direction = pDemo->globalLightDir * rotView;
 	pDemo->deviceCon->UpdateSubresource(pDemo->lightBuffer, 0, nullptr, &pDemo->lightInfo, 0, 0);
 
-	// Clear background
-	float color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	pDemo->deviceCon->ClearRenderTargetView(pDemo->motionBlur.mainRenderView, (const float*)&color[0]);
-	pDemo->deviceCon->ClearRenderTargetView(pDemo->backBufferView, (const float*)&color[0]);
-
-	// Clear the depth buffer to 1.0 (max depth)
-	pDemo->deviceCon->ClearDepthStencilView(pDemo->motionBlur.depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
-	pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
-
 	pDemo->ground.Draw();
 
 	for (int i = 0; i < NUM_BRICKS; i++)
@@ -476,7 +471,12 @@ void Demo::Draw()
 
 	pDemo->motionBlur.draw();
 
-	pDemo->swapChain->Present(0, 0);
+	HRESULT hr = pDemo->swapChain->Present(0, 0);
+	if (FAILED(hr))
+	{
+		int x = 0;
+		x++;
+	}
 };
 
 // Run the demo
@@ -654,13 +654,14 @@ void Demo::privInitDevice()
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;  
 	scd.BufferDesc.Width = GAME_WIDTH;                  
 	scd.BufferDesc.Height = GAME_HEIGHT;               
-	scd.BufferDesc.Height = GAME_HEIGHT;              
+	scd.BufferDesc.RefreshRate.Numerator = 60;
+	scd.BufferDesc.RefreshRate.Denominator = 1;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = this->window;                 
 	scd.SampleDesc.Count = sampleCount;                       
 	scd.SampleDesc.Quality = sampleQuality;                    
 	scd.Windowed = TRUE;                          
-	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	//scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	UINT createDeviceFlags = 0;
 #ifdef _DEBUG

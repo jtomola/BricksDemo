@@ -17,7 +17,8 @@ MotionBlur::MotionBlur()
 	lastTime(),
 	currIndex(0),
 	numTextures(0),
-	initCount(0)
+	initCount(0),
+	blurOn(0)
 {
 };
 
@@ -383,41 +384,25 @@ void MotionBlur::draw()
 		cbBlur.stopIndex = (currIndex + numFramesToUse) % numTextures;
 	}
 	cbBlur.percentageEach = 1.0f / float(numFramesToUse);
+	cbBlur.numTextures = numFramesToUse;
 
-#if 1
-	cbBlur.startIndex = currIndex;
-	cbBlur.stopIndex = currIndex;
-	cbBlur.numTextures = 1;
-	cbBlur.percentageEach = 1.0f;
-#endif
+	if (!blurOn)
+	{
+		cbBlur.startIndex = currIndex;
+		cbBlur.stopIndex = currIndex + 1;
+		if (cbBlur.stopIndex >= cbBlur.numTextures) cbBlur.stopIndex = 0;
+		cbBlur.numTextures = 1;
+		cbBlur.percentageEach = 1.0f;
+	}
 
 	ID3D11DeviceContext* devCon = Demo::GetDeviceContext();
-
-	/*
-	// Set our render target
-	devCon->OMSetRenderTargets(1, &mainRenderView, depthView);
-
-	Vect fillColor = Vect(0.5f, 0.5f, 0.5f, 1.0f);
-
-    //devCon->ClearRenderTargetView(mainRenderView, DirectX::Colors::LightSlateGray);
-	devCon->ClearRenderTargetView(mainRenderView, (const float*)&fillColor);
-	devCon->ClearDepthStencilView(depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-	GraphicsObjMan::drawObjects();
-	*/
 
 	ID3D11Texture2D* backBuffer = Demo::GetBackBuffer();
 	ID3D11RenderTargetView* backBufferView = Demo::GetBackBufferView();
 	ID3D11DepthStencilView* mainDepthView = Demo::GetDepthView();
 
 	// Now render to screen, using blur shader
-	devCon->OMSetRenderTargets(0, 0, 0);
 	devCon->OMSetRenderTargets(1, &backBufferView, mainDepthView);
-
-	// Clear these
-	//Vect fillColor = Vect(0.5f, 0.5f, 0.5f, 1.0f);
-	//devCon->ClearRenderTargetView(backBufferView, (const float*)&fillColor);
-	//devCon->ClearDepthStencilView(mainDepthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	// Set our shaders as active
 	devCon->VSSetShader(vShader, nullptr, 0);
