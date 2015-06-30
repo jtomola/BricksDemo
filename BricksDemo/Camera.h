@@ -37,6 +37,7 @@ private:
     void privUpdateProjectionMatrix();
     void privUpdateViewMatrix();
 
+public:
     // Frustum inputs
     float   nearDist;
     float   farDist;
@@ -49,6 +50,7 @@ private:
     float   farHeight;
     float   farWidth;
 
+private:
     // Viewport specification
     int     viewportX;
     int     viewportY;

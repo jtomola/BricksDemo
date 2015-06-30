@@ -33,10 +33,10 @@ Demo::Demo()
 	ground.CalculateDerivedData();
 
 	// Setup crosshairs
-	crosshairX.position = Vect(0.0f, 0.0f, -1.005f);
-	crosshairX.scale = Vect(0.05f, 0.0025f, 0.01f);
-	crosshairY.position = Vect(0.0f, 0.0f, -1.005f);
-	crosshairY.scale = Vect(0.0025f, 0.05f, 0.01f);
+	crosshairX.position = Vect(0.0f, 0.0f, 0.0000005f);
+	crosshairX.scale = Vect(0.15f, 0.01f, 0.00000001f);
+	crosshairY.position = Vect(0.0f, 0.0f, 0.0000005f);
+	crosshairY.scale = Vect(0.01f, 0.20f, 0.00000001f);
 
 	// Set the 4 colors for our bricks
 	Vect colors[4];
@@ -69,6 +69,7 @@ Demo::Demo()
 	bullet.inverseMass = 0.5f;
 	bullet.gravityNow = false;
 	bullet.gravityEver = false;
+	bullet.active = false;
 	bullet.CalcInertiaTensor();
 };
 
@@ -108,6 +109,9 @@ void Demo::privRotateCamera(const float elapsedTime)
 	mouseXPos = float(xPos - winSize.left) / float(winSize.right - winSize.left);
 	mouseYPos = float(yPos - winSize.top) / float(winSize.bottom - winSize.top);
 
+	crosshairX.position[0] = crosshairY.position[0] = (mouseXPos - 0.5f) * 2.0f;
+	crosshairX.position[1] = crosshairY.position[1] = -(mouseYPos - 0.5f) * 2.0f;
+
 	float mouseXMovement = mouseXPos - mouseXPosLast;
 	float mouseYMovement = mouseYPos - mouseYPosLast;
 
@@ -118,8 +122,8 @@ void Demo::privRotateCamera(const float elapsedTime)
 	if (rmbPressed)
 	{
 		float rotDist = 90.0f * MATH_PI / 180.0f;
-		this->cam.rotateXLocal(rotDist * -mouseYMovement);
-		this->cam.rotateYGlobal(rotDist * -mouseXMovement);
+		//this->cam.rotateXLocal(rotDist * -mouseYMovement);
+		//this->cam.rotateYGlobal(rotDist * -mouseXMovement);
 	}
 
 	this->cam.updateCamera();
@@ -138,11 +142,25 @@ void Demo::privFireBullet(const float elapsedTime)
 	bool lmbPressed = (lmb & 0x80) != 0;
 
 	// Fire if button is pressed and the wait time has elapsed
-	if (lmbPressed && currTime >= waitTime)
+	if (lmbPressed && (!bullet.active || currTime >= waitTime))
 	{
+		// Need to figure out our target
+		float width = cam.nearWidth + (cam.farWidth - cam.nearWidth) * (490.0f - cam.nearDist) / (cam.farDist - cam.nearDist);
+		float height = cam.nearHeight + (cam.farHeight - cam.nearHeight) * (490.0f - cam.nearDist) / (cam.farDist - cam.nearDist);
+
+		Vect target;
+		target[0] = crosshairX.position[0] * 0.5f * width;
+		target[1] = crosshairX.position[1] * 0.5f * height + 50.0f;
+		target[2] = -490.0f;
+		target[3] = 1.0f;
+
 		currTime = 0.0f;
+		//this->bullet.position = Vect(0.0f, 0.0f, 0.0f);
 		this->bullet.position = this->cam.vPos;
-		this->bullet.velocity = this->cam.vDir * -1000.0f;
+		//this->bullet.velocity = this->cam.vDir * -1000.0f;
+		this->bullet.velocity = target - this->bullet.position;
+		this->bullet.velocity.norm();
+		this->bullet.velocity *= 1000.0f;
 		this->bullet.rotation = Quat(0.0f, 0.0f, 0.0f, 1.0f);
 		this->bullet.angVelocity = Vect(0.0f, 0.0f, 0.0f);
 		this->bullet.active = 1;
@@ -450,6 +468,9 @@ void Demo::Draw()
 	pDemo->lightInfo.direction = pDemo->globalLightDir * rotView;
 	pDemo->deviceCon->UpdateSubresource(pDemo->lightBuffer, 0, nullptr, &pDemo->lightInfo, 0, 0);
 
+	Matrix proj = pDemo->cam.getProjMatrix();
+	pDemo->deviceCon->UpdateSubresource(pDemo->projectionBuffer, 0, nullptr, &proj, 0, 0);
+
 	pDemo->ground.Draw();
 
 	for (int i = 0; i < NUM_BRICKS; i++)
@@ -466,6 +487,9 @@ void Demo::Draw()
 	pDemo->deviceCon->UpdateSubresource(pDemo->lightBuffer, 0, nullptr, &pDemo->lightInfo, 0, 0);
 	
 	// Draw crosshairs
+	proj.setIdentity();
+	pDemo->deviceCon->UpdateSubresource(pDemo->projectionBuffer, 0, nullptr, &proj, 0, 0);
+	
 	pDemo->crosshairX.Draw();
 	pDemo->crosshairY.Draw();
 
@@ -774,7 +798,7 @@ void Demo::privInitDevice()
 	deviceCon->PSSetSamplers(0, 1, &sampler);
 
 	// Hide the cursor
-	//ShowCursor(false);
+	ShowCursor(false);
 };
 
 void Demo::privShutDownDevice()
