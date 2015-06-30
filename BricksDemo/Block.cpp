@@ -1,6 +1,7 @@
 #include "Block.h"
 #include "Demo.h"
 
+// Default constructor
 Block::Block()
 	:	transformMatrix(),
 		inverseInertiaTensor(),
@@ -23,10 +24,12 @@ Block::Block()
 {
 };
 
+// Draw the block
 void Block::Draw()
 {
 	if (!active) return;
 
+	// Combine translation, rotation, and scale
 	Matrix Trans;
 	Trans.setTrans(position[0], position[1], position[2]);
 
@@ -36,16 +39,18 @@ void Block::Draw()
 	Matrix Scale;
 	Scale.setScale(scale[0], scale[1], scale[2]);
 
-	//Matrix ModelView(Scale);
+	// Also multiply by camera's view matrix to get ModelView matrix
 	Matrix ModelView = Scale * Rot * Trans * Demo::GetCamera()->getViewMatrix();
-	//Matrix ModelView = Scale * Trans * Demo::GetCamera()->getViewMatrix();
 
+	// Pass the necessary info to demo class, which sends it to shader
 	Demo::SetModelView(ModelView);
 	Demo::SetColorInfo(color);
 
+	// Actual draw call
 	Demo::GetDeviceContext()->DrawIndexed(12 * 3, 0, 0);
 };
 
+	// Update the physics of the block
 void Block::Update(const float elapsedTime)
 {
 	if (!active) return;
@@ -56,12 +61,13 @@ void Block::Update(const float elapsedTime)
 		return;
 	}
 	
+	// Leave gravity off in the beginning until blocks start moving
 	if (!velocity.isZero() && gravityEver) this->gravityNow = true;
 
-	// Update position
+	// Update position using velocity
 	this->position += (this->velocity * elapsedTime);
 
-	// Update rotation
+	// Update rotation using angular velocity
 	if (!angVelocity.isZero())
 	{
 		Quat q;
@@ -95,6 +101,7 @@ void Block::Update(const float elapsedTime)
 	this->torque.set(0.0f, 0.0f, 0.0f);
 };
 
+// Calculate the necessary values for collisions each frame
 void Block::CalculateDerivedData()
 {
 	// Set our transform matrix
@@ -108,6 +115,7 @@ void Block::CalculateDerivedData()
 	this->inverseInertiaTensorWorld = Rot * this->inverseInertiaTensor* Rot.getT();
 };
 
+// Calculate the inverse inertial tensor based on mass and box size
 void Block::CalcInertiaTensor()
 {
 	// Mass should be set already
@@ -118,18 +126,19 @@ void Block::CalcInertiaTensor()
 	}
 	else
 	{
+		// Calculate inertial tensor matrix
 		Matrix inertialTensor;
 		float mass = 1.0f / inverseMass;
 		inertialTensor.setScale((scale[1] * scale[1] + scale[2] * scale[2]) * mass / 12.0f,
 			(scale[0] * scale[0] + scale[2] * scale[2]) * mass / 12.0f,
 			(scale[0] * scale[0] + scale[1] * scale[1]) * mass / 12.0f);
 
+		// Then take inverse
 		inverseInertiaTensor = inertialTensor.getInv();
 	}
+};
 
-
-}
-
+// Test whether a point in world space is inside the block
 bool Block::PointInsideBlock(const Vect& pointIn)
 {
 	// Need to convert this point into the coordinate space of our block
@@ -144,10 +153,12 @@ bool Block::PointInsideBlock(const Vect& pointIn)
 	WorldToLocal[13] = -position[1];
 	WorldToLocal[14] = -position[2];
 
+	// Multiply pointIn by this matrix to convert to local space
 	Vect localPoint = pointIn * WorldToLocal;
 
 	Vect halfsize = this->scale * 0.5f;
 
+	// Check whether point is within the block in each axis
 	bool retBool = true;
 	retBool &= (localPoint[0] >= -halfsize[0] && localPoint[0] <= halfsize[0]);
 	retBool &= (localPoint[1] >= -halfsize[1] && localPoint[1] <= halfsize[1]);
@@ -156,6 +167,7 @@ bool Block::PointInsideBlock(const Vect& pointIn)
 	return retBool;
 };
 
+// Get a corner of the block in world space
 Vect Block::GetCorner(const MinMax x, const MinMax y, const MinMax z)
 {
 	Vect corner = this->position;

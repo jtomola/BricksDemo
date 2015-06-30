@@ -34,8 +34,6 @@ public:
 
     // Get and set functions for rows
     void set(const Vect& vect0, const Vect& vect1, const Vect& vect2, const Vect& vect3);
-    void setRow(const int indexIn, const Vect& vectIn);
-    Vect getRow(const int indexIn) const;
 
     // Special matrix functions
     void T();
@@ -66,8 +64,8 @@ public:
 
 public:
 
+	// Different ways to look at the data
 	union {
-
 		struct 
 		{
 			Vect v0;

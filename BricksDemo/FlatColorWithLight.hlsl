@@ -15,6 +15,7 @@ cbuffer ConstBufferP : register(b1)
 };
 
 // Buffer holding light info
+// Directional light, so LightDir points toward the light
 cbuffer ConstBufferLight : register(b2)
 {
 	float4 LightDir;
@@ -30,7 +31,6 @@ cbuffer ConstBufferColor : register(b3)
 
 //--------------------------------------------------------------------------------------
 // Shader Input
-
 struct VS_INPUT
 {
 	float4 Pos : POSITION;
@@ -58,7 +58,7 @@ PS_INPUT VShader(VS_INPUT input)
 	normalMatrix._m20_m21_m22 = normalize(ModelView._m20_m21_m22);
 	float3 transNorm = normalize(mul(input.Norm, normalMatrix));
 
-	// Lighting, use dot of normal and light position for all 3
+	// Lighting, use dot of normal and light direction
 	output.Color = 0;
 	output.Color += saturate(dot(LightDir.xyz, transNorm) * LightColor);
 	output.Color.a = 1.0f;

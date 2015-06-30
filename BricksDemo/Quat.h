@@ -24,7 +24,7 @@ public:
     void setRotXYZ(const float rotxIn, const float rotyIn, const float rotzIn);
 	void setAxisAngle(const Vect& axisIn, const float angleIn);
 
-	// Accessors to retrieve components of vector
+	// Accessors to retrieve components of quat
 	const float operator[](const int indexIn) const;
 
 	// Same for setting
@@ -35,10 +35,9 @@ public:
 
 private:
 
-	// anonymous union
+	// Different ways to look at the data
 	union 
 	{
-		// anonymous struct
 		struct 
 		{
 			float qx;

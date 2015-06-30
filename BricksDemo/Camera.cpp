@@ -12,7 +12,7 @@ Camera::Camera()
 };
 
 // Critical info for perspective matrix
-// Filed of view in degrees
+// Field of view, aspect ration, near plane, and far plane
 void Camera::setPerspective(const float fov_y, const float aspect, const float nearD, const float farD)
 {
     // Set data
@@ -59,7 +59,7 @@ void Camera::setOrientAndPosition(const Vect& upIn, const Vect& lookIn, const Ve
     this->vPos = posIn;
 };
 
-// Update projection matrix - it is invertible
+// Update projection matrix
 void Camera::privUpdateProjectionMatrix()
 {
     this->projMatrix[0] = 2.0f * this->nearDist / this->nearWidth;
@@ -130,6 +130,7 @@ Matrix& Camera::getProjMatrix()
     return this->projMatrix;
 };
 
+// Rotate camera around global Y axis
 void Camera::rotateYGlobal(const float Value)
 {
 	Matrix Rot;
@@ -139,6 +140,7 @@ void Camera::rotateYGlobal(const float Value)
     this->vRight *= Rot;
 };
 
+// Rotate camera around local X axis
 void Camera::rotateXLocal(const float Value)
 {
 	Matrix Rot;

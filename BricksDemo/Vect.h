@@ -56,6 +56,8 @@ public:
 	bool isEqual(const Vect& vectIn, const float tolerance = 0.0001f) const;
 
 private:
+
+	// Different ways to look at the data
 	union {
 		float v[4];
 

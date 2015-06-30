@@ -22,9 +22,9 @@ public:
     Matrix& getViewMatrix();
     Matrix& getProjMatrix();
 
-	// Rotate the camera
-    void rotateYGlobal(const float Value);
-    void rotateXLocal(const float Value);
+	// Rotate the camera (No longer used as camera is stationary)
+	void rotateYGlobal(const float Value); // around global Y axis
+    void rotateXLocal(const float Value); // around localXx axis
 
     // Camera direction vectors 
     Vect    vUp;        // Up vector
@@ -44,7 +44,7 @@ public:
     float   fovY;
     float   aspectRatio;
 
-    // Screen size - in world space
+    // Width and height of near and far planes of frustum
     float   nearHeight; 
     float   nearWidth;
     float   farHeight;

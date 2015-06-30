@@ -1,6 +1,9 @@
 #ifndef D3D_HEADER_H
 #define D3D_HEADER_H
 
+// Just a header file that includes the necessary DirectX files
+// Also specifies width and height of window
+
 // This includes all necessary D3D header files
 #include <d3d11_1.h>
 #include <d3dcompiler.h>

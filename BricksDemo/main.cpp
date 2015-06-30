@@ -8,7 +8,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 	UNUSED(hPrevInstance);
 	UNUSED(lpCmdLine);
 
-	// Initialize and run engine
+	// Initialize and run the demo
 	Demo::Initialize(hInstance, nCmdShow);
 	Demo::Run();
 

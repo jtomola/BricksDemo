@@ -21,7 +21,6 @@ Matrix::Matrix(const Vect& vect0, const Vect& vect1, const Vect& vect2, const Ve
 
 // Copy constructor
 Matrix::Matrix(const Matrix& matrixIn)
-	//: v0(matrixIn.v0), v1(matrixIn.v1), v2(matrixIn.v2), v3(matrixIn.v3)
 {
 	v0 = matrixIn.v0;
 	v1 = matrixIn.v1;
@@ -29,6 +28,7 @@ Matrix::Matrix(const Matrix& matrixIn)
 	v3 = matrixIn.v3;
 }
 
+// Assignment operator
 Matrix& Matrix::operator= (const Matrix& rhs)
 {
     if (this != &rhs)
@@ -42,7 +42,7 @@ Matrix& Matrix::operator= (const Matrix& rhs)
     return *this;
 };
 
-// Matrix set function
+// Matrix set function - Identity matrix
 void Matrix::setIdentity()
 {
 	memset(this, 0, sizeof(Matrix));
@@ -52,7 +52,7 @@ void Matrix::setIdentity()
 	this->_m15 = 1.0f;
 };
 
-// Matrix set function
+// Matrix set function - Zero matrix
 void Matrix::setZero()
 {
 	memset(this, 0, sizeof(Matrix));
@@ -77,9 +77,10 @@ void Matrix::setScale(const float xScale, const float yScale, const float zScale
     this->_m15 = 1.0f;
 }
 
+// Set rotation matrix (from rotation around X, Y, and Z axes)
 void Matrix::setRotXYZ(const float rotxIn, const float rotyIn, const float rotzIn)
 {
-	// Set up matrices for rotating aroudnd x, y, and z axes
+	// Set up matrices for rotating around x, y, and z axes
 	Matrix rotX, rotY, rotZ;
 	rotX.setIdentity();
 	rotY.setIdentity();
@@ -106,6 +107,7 @@ void Matrix::setRotXYZ(const float rotxIn, const float rotyIn, const float rotzI
 	*this = rotX * rotY * rotZ;
 };
 
+// Set rotation matrix (rotation around a specified axis)
 void Matrix::setRotAxisAngle(const Vect& axisIn, const float angleIn)
 {
 	const Vect vectNorm = axisIn.getNorm();
@@ -141,13 +143,7 @@ void Matrix::setRotAxisAngle(const Vect& axisIn, const float angleIn)
 	this->_m15 = 1.0f;
 };
 
-void Matrix::setRow(const int indexIn, const Vect& vectIn)
-{
-	assert(indexIn >= 0 && indexIn <= 3);
-
-	this->v[indexIn] = vectIn;
-};
-
+// Set function -  vectors
 void Matrix::set(const Vect& vect0, const Vect& vect1, const Vect& vect2, const Vect& vect3)
 {
     this->v0 = vect0;
@@ -156,13 +152,7 @@ void Matrix::set(const Vect& vect0, const Vect& vect1, const Vect& vect2, const 
     this->v3 = vect3;
 }
 
-Vect Matrix::getRow(const int indexIn) const
-{
-	assert(indexIn >= 0 && indexIn <= 3);
-
-	return this->v[indexIn];
-}
-
+// Take transpose of matrix (modifies this object)
 void Matrix::T()
 {
     Vect col0(_m0, _m4, _m8, _m12);
@@ -173,6 +163,7 @@ void Matrix::T()
     this->set(col0, col1, col2, col3);
 }
 
+// Return transpose of matrix (this object not modified)
 Matrix Matrix::getT() const
 {
 	Matrix returnMatrix;
@@ -196,6 +187,7 @@ float Matrix::det() const
 	return det0 + det1 + det2 + det3;
 }
 
+// Returns inverse of matrix (this object not modified)
 Matrix Matrix::getInv() const
 {
 	Matrix b;
@@ -223,8 +215,7 @@ Matrix Matrix::getInv() const
 	return b;
 }
 
-
-
+// Constant indexing
 const float Matrix::operator[](const int indexIn) const
 {
 	assert(indexIn >= 0 && indexIn <= 15);
@@ -232,6 +223,7 @@ const float Matrix::operator[](const int indexIn) const
 	return this->_m[indexIn];
 };
 
+// Indexing for modification
 float& Matrix::operator[](const int indexIn)
 {
 	assert(indexIn >= 0 && indexIn <= 15);
@@ -239,6 +231,7 @@ float& Matrix::operator[](const int indexIn)
 	return this->_m[indexIn];
 };
 
+// Matrix addition
 Matrix Matrix::operator+ (const Matrix& matrixIn) const
 {
     Vect vect0(this->_m0 + matrixIn._m0, this->_m1 + matrixIn._m1, this->_m2 + matrixIn._m2, this->_m3 + matrixIn._m3);
@@ -249,6 +242,7 @@ Matrix Matrix::operator+ (const Matrix& matrixIn) const
     return Matrix(vect0, vect1, vect2, vect3);
 }
 
+// Matrix addition (+=)
 Matrix& Matrix::operator += (const Matrix& matrixIn)
 {
     this->_m0 += matrixIn._m0;
@@ -272,6 +266,7 @@ Matrix& Matrix::operator += (const Matrix& matrixIn)
 
 }
 
+// Matrix subtraction
 Matrix Matrix::operator- (const Matrix& matrixIn) const
 {
     Vect vect0(this->_m0 - matrixIn._m0, this->_m1 - matrixIn._m1, this->_m2 - matrixIn._m2, this->_m3 - matrixIn._m3);
@@ -282,6 +277,7 @@ Matrix Matrix::operator- (const Matrix& matrixIn) const
     return Matrix(vect0, vect1, vect2, vect3);
 }
 
+// Matrix subtraction (-=)
 Matrix& Matrix::operator -= (const Matrix& matrixIn)
 {
     this->_m0 -= matrixIn._m0;
@@ -304,6 +300,7 @@ Matrix& Matrix::operator -= (const Matrix& matrixIn)
     return *this;
 }
 
+// Matrix multiplication
 Matrix Matrix::operator* (const Matrix& matrixIn) const
 {
     Matrix returnMatrix;
@@ -331,6 +328,7 @@ Matrix Matrix::operator* (const Matrix& matrixIn) const
     return returnMatrix;
 };
 
+// Matrix multiplication (*=)
 Matrix& Matrix::operator*= (const Matrix& matrixIn)
 {
     Matrix matrix;
@@ -359,6 +357,7 @@ Matrix& Matrix::operator*= (const Matrix& matrixIn)
     return *this;
 }
 
+// Multiplying by scalar (friend function)
 Matrix operator * (const float s, const Matrix& matrixIn)
 {
     Vect vect0(s * matrixIn._m0, s * matrixIn._m1, s * matrixIn._m2, s * matrixIn._m3);
@@ -369,6 +368,7 @@ Matrix operator * (const float s, const Matrix& matrixIn)
     return Matrix(vect0, vect1, vect2, vect3);
 }
 
+// Multiplying by scalar
 Matrix Matrix::operator* (const float s) const
 {
     Vect vect0(s * this->_m0, s * this->_m1, s * this->_m2, s * this->_m3);
@@ -379,6 +379,7 @@ Matrix Matrix::operator* (const float s) const
     return Matrix(vect0, vect1, vect2, vect3);
 }
 
+// Multiplying by scalar (*=)
 Matrix& Matrix::operator*= (const float s)
 {
     this->_m0 *= s;
@@ -401,7 +402,7 @@ Matrix& Matrix::operator*= (const float s)
     return *this;
 }
 
-// Quat set function
+// Set function (create rotation matrix from quat)
 void Matrix::set(const Quat& quatIn)
 {
 	const float qx = quatIn[0];

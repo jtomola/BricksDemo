@@ -14,11 +14,13 @@ Quat::Quat(const Quat& quatIn)
 {
 };
 
+// Specialized constructor
 Quat::Quat(const float qxIn, const float qyIn, const float qzIn, const float qwIn)
 	: qVect( Vect(qxIn, qyIn, qzIn, qwIn) )
 {
 };
 
+// Assignment operator
 Quat& Quat::operator= (const Quat& rhs)
 {
     if (this != &rhs)
@@ -32,6 +34,7 @@ Quat& Quat::operator= (const Quat& rhs)
     return *this;
 };
 
+// Set function for 4 floats
 void Quat::set(const float qxIn, const float qyIn, const float qzIn, const float qwIn)
 {
     this->qx = qxIn;
@@ -40,11 +43,13 @@ void Quat::set(const float qxIn, const float qyIn, const float qzIn, const float
     this->qw = qwIn;
 };
 
+// Set function for another quat
 void Quat::set(const Quat& quatIn)
 {
     this->qVect = quatIn.qVect;
 };
 
+// Set function for angles of rotation around X, Y, and Z axes
 void Quat::setRotXYZ(const float rotxIn, const float rotyIn, const float rotzIn)
 {
 	Quat RotX; 
@@ -58,12 +63,14 @@ void Quat::setRotXYZ(const float rotxIn, const float rotyIn, const float rotzIn)
     this->set( RotX * RotY * RotZ);
 };
 
+// Set function for an angle of rotation around a provided axis
 void Quat::setAxisAngle(const Vect& axisIn, const float angleIn)
 {
 	this->qVect = axisIn.getNorm() * sinf(angleIn * 0.5f);
 	this->qw = cosf(angleIn * 0.5f);
 }
 
+// Multiplication by another quat - used to combine rotations
 Quat Quat::operator*(const Quat& quatIn) const
 {
     Quat returnQuat;
@@ -73,13 +80,14 @@ Quat Quat::operator*(const Quat& quatIn) const
     return returnQuat;
 };
 
-
+// Constant indexing
 const float Quat::operator[](const int indexIn) const
 {
 	assert(indexIn >= 0 && indexIn <= 3);
     return this->q[indexIn];
 }
 
+// Indexing for modification
 float& Quat::operator[](const int indexIn)
 {
 	assert(indexIn >= 0 && indexIn <= 3);

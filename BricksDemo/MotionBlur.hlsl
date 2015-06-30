@@ -2,6 +2,7 @@
 // Constant Buffers
 //--------------------------------------------------------------------------------------
 
+// Info about which of our past frames we should blur together
 cbuffer ConstBufferBlur : register(b0)
 {
 	int startIndex;
@@ -10,13 +11,14 @@ cbuffer ConstBufferBlur : register(b0)
 	float percentageEach;
 };
 
-// Texures/samplers
+// Array of textures that are our past frames
 Texture2DArray Textures : register(t0);
+
+// Generic sampler
 SamplerState Sampler0 : register(s0);
 
 //--------------------------------------------------------------------------------------
 // Shader Input
-
 struct VS_INPUT
 {
 	float4 Pos : POSITION;
@@ -34,6 +36,8 @@ struct PS_INPUT
 //--------------------------------------------------------------------------------------
 PS_INPUT VShader( VS_INPUT input ) 
 {
+	// No view or projection matrices needed
+	// The buffer holds 2 triangles covering the screen
     PS_INPUT output = (PS_INPUT)0;
 	output.Pos = input.Pos;
 	output.Pos.w = 1.0f;
@@ -46,12 +50,12 @@ PS_INPUT VShader( VS_INPUT input )
 //--------------------------------------------------------------------------------------
 float4 PShader( PS_INPUT input) : SV_Target
 {
-	// Combine all of our past frames with the current one
 	float4 pixelColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	float3 texCoord = float3(input.Tex.x, input.Tex.y, 0.0f);
 
 	int currIndex = startIndex;
 
+	// Combine all of the indicated past frames equally
 	for (int i = 0; i < numUsed; i++)
 	{
 		texCoord.z = float(currIndex);
