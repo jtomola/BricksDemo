@@ -3,24 +3,27 @@
 #include <math.h>
 #include <assert.h>
 
+// Default constructor
 PhysicsContact::PhysicsContact()
     :   worldToContact(),
         contactToWorld(), 
         normal(0.0f, 0.0f, 0.0f),
 		contactPoint(0.0f, 0.0f, 0.0f),
         contactVelocity(0.0f, 0.0f, 0.0f),
-        desiredDeltaVelocity(0.0f),
+        desiredVelocityChange(0.0f),
         restitution(0.0f),
         penetration(0.0f),
 		velocityFromAcc(0.0f)
 {
 };
 
+// Destructor - does nothing
 PhysicsContact::~PhysicsContact()
 {
 };
 
-void PhysicsContact::CalculateDesiredDeltaVelocity(const float timeIn)
+// Calculate the velocity change we need (at the contact point)
+void PhysicsContact::CalculateDesiredVelocityChange(const float timeIn)
 {
 	if (penetration == 0.0f)
 	{
@@ -41,19 +44,23 @@ void PhysicsContact::CalculateDesiredDeltaVelocity(const float timeIn)
 	velocityFromAcc -= blocks[1]->acceleration.dot(-1.0f * scaledNormal) * timeIn;
 	velocityFromAcc -= blocks[1]->angAcceleration.cross(relPos[1])[2] * timeIn;
 
+	// No restitution if velocity below our minimum limit
     if (abs(contactVelocity[2]) < velocityLimit)
     {
         actingRestitution = 0.0f;
     }
 
+	// No restitution if velocity is all due to this frame's acceleration
 	if ( abs(contactVelocity[2]) <= velocityFromAcc + 0.001f)
 	{
         actingRestitution = 0.0f;
 	}
 
-    this->desiredDeltaVelocity = -contactVelocity[2] - actingRestitution * (contactVelocity[2] - velocityFromAcc);
+	// Use contact velocity and restitution to calculate the change we need
+    this->desiredVelocityChange = -contactVelocity[2] - actingRestitution * (contactVelocity[2] - velocityFromAcc);
 };
 
+// Reset all values
 void PhysicsContact::Reset()
 {
     this->normal.set(0.0f, 0.0f, 0.0f);
@@ -63,17 +70,13 @@ void PhysicsContact::Reset()
     this->penetration = 0.0f;
 };
 
+// Change velocities of both blocks
 void PhysicsContact::ChangeVelocity()
 {
 	Vect impulseContact;
 
 	Vect velocityChange[2];
 	Vect angVelocityChange[2];
-
-	Vect& velocity0 = blocks[0]->velocity;
-	Vect& velocity1 = blocks[1]->velocity;
-	Vect& angVelocity0 = blocks[0]->angVelocity;
-	Vect& angVelocity1 = blocks[1]->angVelocity;
 
 	// Need to calculate the impulse now
 	// We are assuming no friction here
@@ -102,11 +105,12 @@ void PhysicsContact::ChangeVelocity()
 	}
 
 	// Return if no change needed
-	if (desiredDeltaVelocity >= -0.01f && desiredDeltaVelocity <= 0.01f) return;
+	if (desiredVelocityChange >= -0.01f && desiredVelocityChange <= 0.01f) return;
 
 	// Calculate size of impulse
-	impulseContact.set(0.0f, 0.0f, this->desiredDeltaVelocity / deltaVelocity);
+	impulseContact.set(0.0f, 0.0f, this->desiredVelocityChange / deltaVelocity);
 
+	// Convert to world coordinates
     Vect impulse = impulseContact * contactToWorld;
 	
     // Now split impulse into its linear and rotational components
@@ -237,7 +241,7 @@ void PhysicsContact::CalculateData(const float timeIn)
     }
 
     // Now calculate the desired change in velocity
-    this->CalculateDesiredDeltaVelocity(timeIn);
+    this->CalculateDesiredVelocityChange(timeIn);
 };
 
 // Calculate local velocity of a body at the contact point

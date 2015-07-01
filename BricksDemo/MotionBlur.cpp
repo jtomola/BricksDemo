@@ -4,6 +4,7 @@
 #include <cmath>
 #include <chrono>
 
+// Default constructor
 MotionBlur::MotionBlur()
 	: blurTextures(0),
 	blurSRVs(0),
@@ -24,6 +25,8 @@ MotionBlur::MotionBlur()
 {
 };
 
+// Initialize the object
+// Create all of our textures and buffers (quite a lot)
 void MotionBlur::initialize(const int numTexturesIn)
 {
 	this->numTextures = numTexturesIn;
@@ -48,7 +51,7 @@ void MotionBlur::initialize(const int numTexturesIn)
 	HRESULT hr;
 	ID3D11Device* dev = Demo::GetDevice();
 
-	// Create the main render target texture and view
+	// Create the main render target texture
 	hr = dev->CreateTexture2D(&textureDesc, nullptr, &mainRenderTexture);
 	if (hr != S_OK)
 	{
@@ -56,6 +59,7 @@ void MotionBlur::initialize(const int numTexturesIn)
 		assert(0);
 	}
 
+	// Create the main render target View
 	hr = dev->CreateRenderTargetView(mainRenderTexture, nullptr, &mainRenderView);
 	if (FAILED(hr))
 	{
@@ -63,7 +67,7 @@ void MotionBlur::initialize(const int numTexturesIn)
 		assert(0);
 	}
 
-	// Create the texture, RTV, and SRV for each
+	// Create the texture array for storing past frames
 	textureDesc.ArraySize = numTextures;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
@@ -77,6 +81,7 @@ void MotionBlur::initialize(const int numTexturesIn)
 	srvDesc.Texture2DArray.MipLevels = 1;
 	srvDesc.Texture2DArray.MostDetailedMip = 0;
 
+	// Here is texture creation
 	hr = dev->CreateTexture2D(&textureDesc, nullptr, &blurTextures);
 	if (hr != S_OK)
 	{
@@ -84,6 +89,7 @@ void MotionBlur::initialize(const int numTexturesIn)
 		assert(0);
 	}
 
+	// And shader resource view creation
 	hr = dev->CreateShaderResourceView(blurTextures, &srvDesc, &blurSRVs);
 	if (FAILED(hr))
 	{
@@ -117,7 +123,9 @@ void MotionBlur::initialize(const int numTexturesIn)
 		assert(0);
 	}
 
-	// Set up the vertex buffer 
+	// VERTEX AND INDEX INFO
+	// Creating a simple vertex and index buffer for drawing a rectangle filling the screen
+	// Just two triangles
 	struct Triangle
 	{
 		unsigned int v1;
@@ -172,17 +180,7 @@ void MotionBlur::initialize(const int numTexturesIn)
 	tList[1].v2 = 1;
 	tList[1].v3 = 3;
 
-	/*
-	tList[0].v1 = 3;
-	tList[0].v2 = 2;
-	tList[0].v3 = 1;
-
-	tList[1].v1 = 3;
-	tList[1].v2 = 1;
-	tList[1].v3 = 0;
-	*/
-
-	// Now need to create vertex and index buffers
+	// Here actually create vertex and index buffers
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -218,7 +216,7 @@ void MotionBlur::initialize(const int numTexturesIn)
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bd.CPUAccessFlags = 0;
 
-	// Light buffer
+	// Create the buffer
 	hr = Demo::GetDevice()->CreateBuffer(&bd, nullptr, &blurInfoBuffer);
 	if (FAILED(hr))
 	{
@@ -227,10 +225,11 @@ void MotionBlur::initialize(const int numTexturesIn)
 	}
 	Demo::GetDeviceContext()->UpdateSubresource(blurInfoBuffer, 0, nullptr, &cbBlur, 0, 0);
 
+
+	// SHADERS ----------------------------------------------
 	// Now create our shaders for motion blur effect
 	ID3DBlob* vShaderBlob = 0;
 	ID3DBlob* pShaderBlob = 0;
-
 
 	hr = S_OK;
 
@@ -323,6 +322,7 @@ void MotionBlur::initialize(const int numTexturesIn)
 	lastTime = clock();
 };
 
+// Destroy all our created objects
 void MotionBlur::destroy()
 {
 	// Delete all of our rendering textures
@@ -344,16 +344,20 @@ void MotionBlur::destroy()
 	if (indexBuffer != 0) indexBuffer->Release(); indexBuffer = 0;
 };
 
+// Destructor
 MotionBlur::~MotionBlur()
 {
 	ZeroMemory(this, sizeof(MotionBlur));
 };
 
+// Init count keeps track to make sure we don't use more 
+// past frames than we've actually drawn
 void MotionBlur::resetInitCount()
 {
 	this->initCount = 0;
 };
 
+// Draw
 void MotionBlur::draw()
 {
 	clock_t currTime;
@@ -362,7 +366,7 @@ void MotionBlur::draw()
 	lastTime = currTime;
 
 	// To prevent jitter, we need to average last frametimes
-	// This gets rid of quick changes
+	// This gets rid of instantaneous variation in amount of blur
 	static float times[20];
 	static int counter = 0;
 	times[counter] = elapsedTime;
@@ -383,6 +387,7 @@ void MotionBlur::draw()
 	}
 
 	// Update blur info for shader
+	// Calculate how many of our frames we should use
 	int numFramesToUse = (int) floor(blurTime / timeToUse + 0.5f);
 	if (numFramesToUse <= 0) numFramesToUse = 1;
 	if (numFramesToUse > initCount)
@@ -400,10 +405,13 @@ void MotionBlur::draw()
 		cbBlur.startIndex = currIndex;
 	}
 
+	// Set rest of data in our constant buffer
 	cbBlur.percentageEach = 1.0f / float(numFramesToUse);
 	cbBlur.numUsed = numFramesToUse;
 	cbBlur.numTextures = numTextures;
 
+	// If blur is off, we are still using this shader
+	// Just using the current frame, with a percentage of 1.0
 	if (!blurOn)
 	{
 		cbBlur.startIndex = currIndex;
@@ -411,17 +419,13 @@ void MotionBlur::draw()
 		cbBlur.percentageEach = 1.0f;
 	}
 
-	static int numUsed[500];
-	static int currInd = 0;
-	numUsed[currInd] = cbBlur.numUsed;
-	currInd++;
-	if (currInd >= 500) currInd = 0;
-
 	ID3D11DeviceContext* devCon = Demo::GetDeviceContext();
 
 	ID3D11Texture2D* backBuffer = Demo::GetBackBuffer();
 	ID3D11RenderTargetView* backBufferView = Demo::GetBackBufferView();
 	ID3D11DepthStencilView* mainDepthView = Demo::GetDepthView();
+
+	// Demo::draw already draw the current screen to our main render texture here
 
 	// Now render to screen, using blur shader
 	devCon->OMSetRenderTargets(1, &backBufferView, mainDepthView);
@@ -433,6 +437,7 @@ void MotionBlur::draw()
 	devCon->IASetInputLayout(inputLayout);
 
 	// First need to resolve our multi sampled drawing
+	// Make sure it's not bound anywhere
 	ID3D11ShaderResourceView* nullView = 0;
 	devCon->PSSetShaderResources(0, 1, &nullView);
 	devCon->ResolveSubresource(blurTextures, currIndex, mainRenderTexture, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
@@ -440,6 +445,7 @@ void MotionBlur::draw()
 	// Make sure right textures are bound
 	devCon->PSSetShaderResources(0, 1, &blurSRVs);
 
+	// Update our constant buffer
 	devCon->UpdateSubresource(blurInfoBuffer, 0, nullptr, &cbBlur, 0, 0);
 	devCon->PSSetConstantBuffers(0, 1, &blurInfoBuffer);
 
@@ -451,8 +457,10 @@ void MotionBlur::draw()
 	// Set index buffer
 	devCon->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
+	// Actual draw call
 	devCon->DrawIndexed(6, 0, 0);
 
+	// Update the index
 	currIndex--;
 	if (currIndex < 0)
 	{
@@ -460,6 +468,7 @@ void MotionBlur::draw()
 	}
 };
 
+// Set total time into past that should be blurred
 void MotionBlur::setBlurTime(const float timeIn)
 {
 	this->blurTime = timeIn;

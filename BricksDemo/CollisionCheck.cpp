@@ -6,7 +6,7 @@
 #include <assert.h>
 
 // Fill in data for a point to face collision
-void fillDataPointFace(
+void fillContactPointFaceCollision(
 	 Block& blockOne,
 	 Block& blockTwo,
 	const Vect& toCenter,
@@ -18,9 +18,8 @@ void fillDataPointFace(
 	Matrix transOne = blockOne.transformMatrix;
 	Matrix transTwo = blockTwo.transformMatrix;
 
-	// We know which axis the collision is on (i.e. best),
-	// but we need to work out which of the two faces on
-	// this axis.
+	// We know the axis of the collision
+	// Could be either of 2 faces
 	Vect normal;
 	if (best == 0)
 	{
@@ -40,7 +39,6 @@ void fillDataPointFace(
 	}
 
 	// Work out which vertex of box two we're colliding with.
-	// Using toCentre doesn't work!
 	Vect vertex = blockTwo.scale * 0.5f;
 	if (transTwo.v0.dot(normal) < 0) vertex[0] = -vertex[0];
 	if (transTwo.v1.dot(normal) < 0) vertex[1] = -vertex[1];
@@ -55,8 +53,11 @@ void fillDataPointFace(
 };
 
 
+// Macro to test a given axis
+// Updates the smallest penetration if necessary
+// Returns if this axis shows we're not colliding
 #define TEST_AXIS(axis, index) \
-	if ( !tryAxis(blockOne, blockTwo, (axis), diffCenter, (index), penetration, bestIndex)) return 0;
+	if ( !testAxis(blockOne, blockTwo, (axis), diffCenter, (index), penetration, bestIndex)) return 0;
 
 bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 {
@@ -87,8 +88,6 @@ bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 	Vect axis5(transTwo.v2);
 	TEST_AXIS(axis5, 5);
 
-	// Store the best axis-major, in case we run into almost
-	// parallel edge collisions later
 	unsigned bestSingleAxis = bestIndex;
 
 	Vect axis6 = transOne.v0.cross(transTwo.v0);
@@ -137,20 +136,20 @@ bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 		TEST_AXIS(axis14, 14);
 	}
 
-	// Make sure we've got a result.
+	// Make sure nothing went wrong
 	if (bestIndex == 0xffffff) return 0;
 	assert(bestIndex != 0xffffff);
 
-	// We now know there's a collision, and we know which
-	// of the axes gave the smallest penetration. We now
-	// can deal with it in different ways depending on
-	// the case.
+	// If we get here we know there was a collision
+	// Depending on which axis, we need to deal with it
 	if (bestIndex < 3)
 	{
-		// We've got a vertex of box two on a face of box one.
-		fillDataPointFace(blockOne, blockTwo, diffCenter, contact, bestIndex, penetration);
+		// Vertex of box two is colliding with face of box one. Fill our contact data
+		fillContactPointFaceCollision(blockOne, blockTwo, diffCenter, contact, bestIndex, penetration);
 
+		// This is a bit of a hack to improve performance
 		// Need to check if any axes are aligned. Might need to adjust contact point to center it on a face
+		// Previous function always returns a corner
 		Vect bestAxis = transOne.v[bestIndex];
 
 		// See if any of other block's axes align with this one
@@ -188,6 +187,7 @@ bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 			corner = blockOne.GetCorner(MAX, MAX, MAX);
 			if (blockTwo.PointInsideBlock(corner)) { pointSum += corner; numPointsInside++; }
 
+			// If 4 corners are penetrating, set the contact point to the center of the face
 			if (numPointsInside == 4)
 			{
 				contact.contactPoint = pointSum * (1.0f / float(numPointsInside));
@@ -196,62 +196,50 @@ bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact)
 	}
 	else if (bestIndex < 6)
 	{
-		// We've got a vertex of box one on a face of box two.
-		// We use the same algorithm as above, but swap around
-		// one and two (and therefore also the vector between their
-		// centers).
-		fillDataPointFace(blockTwo, blockOne, diffCenter * -1.0f, contact, bestIndex - 3, penetration);
+		// Vertex of box one is colliding with face of box two. Fill our contact data
+		fillContactPointFaceCollision(blockTwo, blockOne, diffCenter * -1.0f, contact, bestIndex - 3, penetration);
 	}
 	else
 	{
-		// We've got an edge-edge contact. Find out which axes
+		// If we're here, it's an edge edge contact
 		bestIndex -= 6;
 		unsigned oneAxisIndex = bestIndex / 3;
 		unsigned twoAxisIndex = bestIndex % 3;
-		//Vect oneAxis = transOne.getAxisVector(oneAxisIndex);
 		Vect oneAxis = transOne.v[oneAxisIndex];
 		Vect twoAxis = transTwo.v[twoAxisIndex];
 		Vect axis = oneAxis.cross(twoAxis);
 		axis.norm();
 
-		// The axis should point from box one to box two.
+		// If not pointing from box one to box two, correct it
 		if (axis.dot(diffCenter) > 0.0f) axis = axis * -1.0f;
 
-		// We have the axes, but not the edges: each axis has 4 edges parallel
-		// to it, we need to find which of the 4 for each object. We do
-		// that by finding the point in the center of the edge. We know
-		// its component in the direction of the box's collision axis is zero
-		// (its a mid-point) and we determine which of the extremes in each
-		// of the other axes is closest.
-		Vect ptOnOneEdge = blockOne.scale * 0.5f;
-		Vect ptOnTwoEdge = blockTwo.scale * 0.5f;
-		for (unsigned i = 0; i < 3; i++)
+		// We know the axis, but need to figure out which edges are colliding
+		// Find center points of the two edges
+		Vect ptOnEdgeBlockOne = blockOne.scale * 0.5f;
+		Vect ptOnEdgeBlockTwo = blockTwo.scale * 0.5f;
+		for (unsigned int i = 0; i < 3; i++)
 		{
-			if (i == oneAxisIndex) ptOnOneEdge[i] = 0.0f;
-			else if (transOne.v[i].dot(axis) > 0.0f) ptOnOneEdge[i] = -ptOnOneEdge[i];
+			if (i == oneAxisIndex) ptOnEdgeBlockOne[i] = 0.0f;
+			else if (transOne.v[i].dot(axis) > 0.0f) ptOnEdgeBlockOne[i] = -ptOnEdgeBlockOne[i];
 
-			if (i == twoAxisIndex) ptOnTwoEdge[i] = 0.0f;
-			else if (transTwo.v[i].dot(axis) < 0.0f) ptOnTwoEdge[i] = -ptOnTwoEdge[i];
+			if (i == twoAxisIndex) ptOnEdgeBlockTwo[i] = 0.0f;
+			else if (transTwo.v[i].dot(axis) < 0.0f) ptOnEdgeBlockTwo[i] = -ptOnEdgeBlockTwo[i];
 		}
 
-		// Move them into world coordinates (they are already oriented
-		// correctly, since they have been derived from the axes).
-		ptOnOneEdge = ptOnOneEdge * transOne;
-		ptOnTwoEdge = ptOnTwoEdge * transTwo;
+		// Convert these midpoints into world coordinates
+		ptOnEdgeBlockOne = ptOnEdgeBlockOne * transOne;
+		ptOnEdgeBlockTwo = ptOnEdgeBlockTwo * transTwo;
 
-		// So we have a point and a direction for the colliding edges.
-		// We need to find out point of closest approach of the two
-		// line-segments.
 		Vect halfSizeOne = blockOne.scale * 0.5f;
 		Vect halfSizeTwo = blockTwo.scale * 0.5f;
 
-		Vect vertex = contactPoint(
-			ptOnOneEdge, oneAxis, halfSizeOne[oneAxisIndex],
-			ptOnTwoEdge, twoAxis, halfSizeTwo[twoAxisIndex],
+		// calculate the contact point
+		Vect vertex = contactPointEdgeEdge(
+			ptOnEdgeBlockOne, oneAxis, halfSizeOne[oneAxisIndex],
+			ptOnEdgeBlockTwo, twoAxis, halfSizeTwo[twoAxisIndex],
 			bestSingleAxis > 2
 			);
 
-		// We can fill the contact.
 		contact.penetration = penetration;
 		contact.normal = axis;
 		contact.contactPoint = vertex;

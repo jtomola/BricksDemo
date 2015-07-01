@@ -5,8 +5,10 @@
 #include <time.h>
 #include <stdlib.h>
 
+// This is the a struct with info we will pass to shader
 struct CBBlur
 {
+	// Indicates how many and which past frames to blur together
 	int startIndex;
 	int numUsed;
 	int numTextures;
@@ -15,6 +17,7 @@ struct CBBlur
 	CBBlur() : startIndex(0), numUsed(0), numTextures(0), percentageEach(0) {};
 };
 
+// Class with knowledge to blur past frames together
 class MotionBlur
 {
 public:
@@ -28,6 +31,7 @@ public:
 	void resetInitCount();
 
 public:
+	// Our depth texture and normal textures that hold past frames
 	CBBlur						cbBlur;
 	ID3D11Texture2D*			blurTextures;
 	ID3D11ShaderResourceView*	blurSRVs;
@@ -38,17 +42,21 @@ public:
 	ID3D11RenderTargetView*		currRTV;
 	ID3D11Buffer*				blurInfoBuffer;
 
-	// For drawing to back buffer
+	// Vertex and index buffer - just a rectangle covering whole screen
+	// Used for drawing our blurred image to back buffer
 	ID3D11Buffer*				vertBuffer;
 	ID3D11Buffer*				indexBuffer;
+
 	// Shader Info
 	ID3D11VertexShader*			vShader;
 	ID3D11PixelShader*			pShader;
 	ID3D11InputLayout*			inputLayout;
-	float						blurTime;
-	clock_t						lastTime;
-	int							currIndex;
-	int							numTextures;
+
+	// Info about which frames to blur
+	float						blurTime;   // total time into past that should be blurred together
+	clock_t						lastTime;   // time of last frame
+	int							currIndex;  // current frame index in our texture array
+	int							numTextures;// total number of textures in our array
 	int							initCount;
 	bool						blurOn;
 };

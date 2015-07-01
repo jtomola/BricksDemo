@@ -5,8 +5,11 @@
 
 class PhysicsContact;
 
+// Check if two blocks are colliding, fill contact data if so
 bool CheckColliding(Block& blockOne, Block& blockTwo, PhysicsContact& contact);
-void fillDataPointFace(
+
+// Fill contact data for a point face collision
+void fillContactPointFaceCollision(
 	Block& blockOne,
 	Block& blockTwo,
 	const Vect& toCenter,
@@ -14,7 +17,8 @@ void fillDataPointFace(
 	unsigned int best,
 	float penetration);
 
-// Transform an AABB to a length in a given axis
+// Transform an block to a length in a given axis
+// Used for separating axis tests
 static inline float transToAxis(Block& blockIn,
 	const Vect& axisIn)
 {
@@ -30,8 +34,6 @@ static inline float transToAxis(Block& blockIn,
 // determine how much the objects penetrate along a given axis
 static inline float penOnAxis(Block& blockOne,
 	Block& blockTwo,
-	//const Matrix& transOne,
-	//const Matrix& transTwo,
 	const Vect& axis,
 	const Vect& diffCenter)
 {
@@ -39,27 +41,29 @@ static inline float penOnAxis(Block& blockOne,
 	const float oneProjection = transToAxis(blockOne, axis);
 	const float twoProjection = transToAxis(blockTwo, axis);
 
-	// Distance between centers on this axis
+	// Distance between block centers on this axis
 	const float dist = abs(diffCenter.dot(axis));
 
 	// Calculate and return the overlap
 	return oneProjection + twoProjection - dist;
 };
 
-static inline bool tryAxis(
+// Test whether blocks are penetrating along a given axis
+// Returns bool and updates the smallest penetration if necessary
+static inline bool testAxis(
 	Block& blockOne,
 	Block& blockTwo,
 	Vect& axis,
 	const Vect& toCenter,
 	unsigned index,
 
-	// These values may be updated
-	float& smallestPenetration,
+	float& smallestPenetration, // updated by this function
 	unsigned& smallestCase
 	)
 {
-	// Make sure we have a normalized axis, and don't check almost parallel axes
+	// No need to check if lines are parallel
 	if (axis.magSqr() < 0.0001f) return true;
+	// Normalize the axis
 	axis.norm();
 
 	// Calculate penetration on this axis
@@ -67,7 +71,6 @@ static inline bool tryAxis(
 
 	// Update smallest penetration if necessary
 	if (pen < 0.0f) return false;
-	//if (pen <= smallestPenetration + 0.01f) {
 	if (pen < smallestPenetration) {
 		smallestPenetration = pen;
 		smallestCase = index;
@@ -75,56 +78,49 @@ static inline bool tryAxis(
 	return true;
 };
 
-static inline Vect contactPoint(
-	const Vect& pOne,
-	const Vect& dOne,
-	float oneSize,
-	const Vect& pTwo,
-	const Vect& dTwo,
-	float twoSize,
-
-	// If this is true, and the contact point is outside
-	// the edge (in the case of an edge-face contact) then
-	// we use one's midpoint, otherwise we use two's.
+// Calculate the contact point for an edge to edge collision
+static inline Vect contactPointEdgeEdge(
+	const Vect& ptOnEdgeBlockOne,
+	const Vect& oneAxis,
+	float sizeOne,
+	const Vect& ptOnEdgeBlockTwo,
+	const Vect& twoAxis,
+	float sizeTwo,
 	bool useOne)
 {
-	Vect toSt, cOne, cTwo;
-	float dpStaOne, dpStaTwo, dpOneTwo, smOne, smTwo;
-	float denom, mua, mub;
+	// All our variables
+	Vect diffPos, cOne, cTwo;
+	float diffPosAxisOne, diffPosAxisTwo, axisDotProduct;
+	float denom, nearestPointOne, nearestPointTwo;
 
-	smOne = dOne.magSqr();
-	smTwo = dTwo.magSqr();
-	dpOneTwo = dTwo.dot(dOne);
+	axisDotProduct = twoAxis.dot(oneAxis);
 
-	toSt = pOne - pTwo;
-	dpStaOne = dOne.dot(toSt);
-	dpStaTwo = dTwo.dot(toSt);
+	diffPos = ptOnEdgeBlockOne - ptOnEdgeBlockTwo;
+	diffPosAxisOne = oneAxis.dot(diffPos);
+	diffPosAxisTwo = twoAxis.dot(diffPos);
 
-	denom = smOne * smTwo - dpOneTwo * dpOneTwo;
+	denom = 1.0f - axisDotProduct * axisDotProduct;
 
-	// Zero denominator indicates parallel lines
+	// Check for parallel lines
 	if (abs(denom) < 0.0001f) {
-		return useOne ? pOne : pTwo;
+		return useOne ? ptOnEdgeBlockOne : ptOnEdgeBlockTwo;
 	}
 
-	mua = (dpOneTwo * dpStaTwo - smTwo * dpStaOne) / denom;
-	mub = (smOne * dpStaTwo - dpOneTwo * dpStaOne) / denom;
+	nearestPointOne = (axisDotProduct * diffPosAxisTwo - diffPosAxisOne) / denom;
+	nearestPointTwo = (diffPosAxisTwo - axisDotProduct * diffPosAxisOne) / denom;
 
-	// If either of the edges has the nearest point out
-	// of bounds, then the edges aren't crossed, we have
-	// an edge-face contact. Our point is on the edge, which
-	// we know from the useOne parameter.
-	if (mua > oneSize ||
-		mua < -oneSize ||
-		mub > twoSize ||
-		mub < -twoSize)
+	// If nearest point is not in the block, just return one of the midpoints
+	if (nearestPointOne > sizeOne ||
+		nearestPointOne < -sizeOne ||
+		nearestPointTwo > sizeTwo ||
+		nearestPointTwo < -sizeTwo)
 	{
-		return useOne ? pOne : pTwo;
+		return useOne ? ptOnEdgeBlockOne : ptOnEdgeBlockTwo;
 	}
 	else
 	{
-		cOne = pOne + dOne * mua;
-		cTwo = pTwo + dTwo * mub;
+		cOne = ptOnEdgeBlockOne + oneAxis * nearestPointOne;
+		cTwo = ptOnEdgeBlockTwo + twoAxis * nearestPointTwo;
 
 		return cOne * 0.5 + cTwo * 0.5;
 	}
