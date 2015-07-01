@@ -14,7 +14,7 @@ LRESULT CALLBACK wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Constructor
 Demo::Demo()
-	:	cam(), ground(), bricks(), crosshairX(), crosshairY(), bullet(),
+	:	cam(), motionBlur(), ground(), bricks(), bullet(), crosshairX(), crosshairY(),
 		window(0), swapChain(0), device(0), deviceCon(0),
 		backBuffer(0), backBufferView(0), depthTexture(0), depthView(0),
 		vShader(0), pShader(0), inputLayout(0), rastState(0),
@@ -23,8 +23,202 @@ Demo::Demo()
 		modelView(), projection(), lightInfo(), globalLightDir(), color(),
 		running(false), timeSlowed(false)
 {
+};
+
+// Destructor
+Demo::~Demo()
+{
+};
+
+// Get singleton instance
+Demo* Demo::privGetInstance()
+{
+	// Singleton storage
+	static Demo Instance;
+	return &Instance;
+};
+
+// Adjust position of our crosshairs
+void Demo::privMoveCrosshairs(const float elapsedTime)
+{
+	// Check whether right mouse button is pressed
+	short rmb = GetKeyState(VK_RBUTTON);
+	bool rmbPressed = (rmb & 0x80) != 0;
+
+	// Get mouse position
+	POINT cursorPos;
+	GetCursorPos(&cursorPos);
+	int xPos = (int)cursorPos.x;
+	int yPos = (int)cursorPos.y;
+
+	// Get window coordinates
+	RECT winSize;
+	GetWindowRect(this->window, &winSize);
+
+	static float mouseXPos = 0.0f, mouseYPos = 0.0f;
+
+	mouseXPos = float(xPos - winSize.left) / float(winSize.right - winSize.left);
+	mouseYPos = float(yPos - winSize.top) / float(winSize.bottom - winSize.top);
+
+	// Move our crosshairs to correct screen position
+	crosshairX.position[0] = crosshairY.position[0] = (mouseXPos - 0.5f) * 2.0f;
+	crosshairX.position[1] = crosshairY.position[1] = -(mouseYPos - 0.5f) * 2.0f;
+};
+
+// Helper function to fire bullet (if necessary)
+void Demo::privFireBullet(const float elapsedTime)
+{
+	// Delay between shots
+	const float waitTime = 2.0f;
+	
+	static float currTime = waitTime;
+	currTime += elapsedTime;
+
+	// Check whether left mouse button is pressed
+	short lmb = GetKeyState(VK_LBUTTON);
+	bool lmbPressed = (lmb & 0x80) != 0;
+
+	// Fire if button is pressed and the wait time has elapsed
+	if (lmbPressed && (!bullet.active || currTime >= waitTime))
+	{
+		// Need to figure out our target
+		float width = cam.nearWidth + (cam.farWidth - cam.nearWidth) * (490.0f - cam.nearDist) / (cam.farDist - cam.nearDist);
+		float height = cam.nearHeight + (cam.farHeight - cam.nearHeight) * (490.0f - cam.nearDist) / (cam.farDist - cam.nearDist);
+
+		// Use current crosshair positions (in screen coordinates)
+		// and width and height of frustum at distance of blocks
+		Vect target;
+		target[0] = crosshairX.position[0] * 0.5f * width;
+		target[1] = crosshairX.position[1] * 0.5f * height + 50.0f;
+		target[2] = -490.0f;
+		target[3] = 1.0f;
+
+		currTime = 0.0f;
+
+		// Set our velocity to be toward the target point
+		this->bullet.position = this->cam.vPos;
+		this->bullet.velocity = target - this->bullet.position;
+		this->bullet.velocity.norm();
+		this->bullet.velocity *= 1000.0f;
+		this->bullet.rotation = Quat(0.0f, 0.0f, 0.0f, 1.0f);
+		this->bullet.angVelocity = Vect(0.0f, 0.0f, 0.0f);
+		this->bullet.active = 1;
+		this->bullet.gravityNow = false;
+	}
+}
+
+// Check our collisions and handle them accordingly
+void Demo::privCheckCollisions(const float timeIn)
+{
+	PhysicsContact contact;
+	contact.Reset();
+
+	// Check bullet and ground
+	if (CheckColliding(ground, bullet, contact))
+	{
+		// Handle collision
+		contact.CalculateData(timeIn);
+		contact.ChangeVelocity();
+		contact.ChangePosition();
+		contact.Reset();
+	}
+
+	// Check all bricks against ground
+	for (int i = 0; i < NUM_BRICKS; i++)
+	{ 
+		if (CheckColliding(bricks[i], ground, contact))
+		{
+			// Handle collision
+			contact.CalculateData(timeIn);
+			contact.ChangeVelocity();
+			contact.ChangePosition();
+			contact.Reset();
+		}
+	}
+
+	// Check all bricks against bullet
+	for (int i = 0; i < NUM_BRICKS; i++)
+	{ 
+		if (CheckColliding(bullet, bricks[i], contact))
+		{
+			contact.CalculateData(timeIn);
+
+			// Time to have some fun with all blocks within certain distance of this collision
+			// Launch those bricks upward with random angular velocity
+			for (int k = 0; k < NUM_BRICKS; k++)
+			{
+				// use mag squared to avoid square root
+				Vect diffPos = bricks[k].position - contact.contactPoint;
+				float magSquared = diffPos.magSqr();
+				
+				if (magSquared < 1500.0f && bricks[k].position[1] >= bricks[i].position[1])
+				{
+					Vect velocityChange(diffPos[0] > 0 ? 30.0f : -30.0f, 200.0f, 0.0f);
+					bricks[k].velocity += velocityChange;
+
+					static int x = 987444303;
+					srand(x);
+					x += 5134;
+
+					// Random angular velocity
+					Vect angVelocityChange(0.0f, 0.0f, 0.0f);
+					angVelocityChange[0] = (float)(rand() % 60 - 30);
+					angVelocityChange[1] = (float)(rand() % 60 - 30);
+					angVelocityChange[2] = (float)(rand() % 60 - 30);
+
+					bricks[k].angVelocity += angVelocityChange;
+				}
+			}
+
+			// Slow time on this collision
+			if (!this->timeSlowed)
+			{
+				this->slowTimer = 0.0f;
+				this->timeSlowed = true;
+				this->motionBlur.blurOn = true;
+			}
+			contact.Reset();
+			bullet.active = false;
+			break;
+		}
+	}
+
+	// Now check all bricks with each other
+	for (int i = 0; i < NUM_BRICKS; i++)
+	{
+		for (int j = i + 1; j < NUM_BRICKS; j++)
+		{
+			if (CheckColliding(bricks[i], bricks[j], contact))
+			{
+				// Handle collision accordingly
+				contact.CalculateData(timeIn);
+				contact.ChangeVelocity();
+				contact.ChangePosition();
+				contact.Reset();
+			}
+		}
+	}
+
+	return;
+};
+
+// Check if time is slowed, and whether it should return to normal
+void Demo::privCheckSlowTime(const float elapsedTime)
+{
+	if (!this->timeSlowed) return;
+
+	slowTimer += elapsedTime;
+	if (slowTimer > 6.0f)
+	{
+		slowTimer = 0.0f;
+		timeSlowed = false;
+		motionBlur.blurOn = false;
+	}
+}
+
+void Demo::privReset()
+{
 	// Setup ground
-	//ground.color = Vect(0.2f, 0.2f, 0.2f, 1.0f);
 	ground.color = Vect(0.0f, 0.4f, 0.0f, 1.0f);
 	ground.position = Vect(0.0f, -2.5f, 0.0f);
 	ground.scale = Vect(1000.0f, 5.0f, 3000.0f);
@@ -54,10 +248,11 @@ Demo::Demo()
 			bricks[index].scale = Vect(20.0f, 20.0f, 20.f);
 			bricks[index].color = colors[((j % 4) + i) % 4];
 			bricks[index].position = Vect(-50.0f + 20.0f * j, 10.0f + 20.0f * i, -500.0f);
-			//bricks[index].position = Vect(-500.0f + 30.0f * i * 6 + j * 30.0f, 100.0f, -500.0f);
-			//bricks[index].position = Vect(0.0f, 50.0f + 30.0f * i * 6 + j * 30.0f, -500.0f);
-			//bricks[index].rotation.setRotXYZ(0.0f, 45.0f * MATH_PI / 180.0f, 45.0f * MATH_PI / 180.0f);
+			bricks[index].velocity = Vect(0.0f, 0.0f, 0.0f);
+			bricks[index].angVelocity = Vect(0.0f, 0.0f, 0.0f);
+			bricks[index].rotation = Quat(0.0f, 0.0f, 0.0f, 1.0f);
 			bricks[index].inverseMass = 0.2f;
+			bricks[index].gravityNow = false;
 			bricks[index].CalcInertiaTensor();
 		}
 	}
@@ -71,274 +266,62 @@ Demo::Demo()
 	bullet.gravityEver = false;
 	bullet.active = false;
 	bullet.CalcInertiaTensor();
+
+	// Turn off slow time and motion blur
+	this->timeSlowed = false;
+	this->motionBlur.blurOn = false;
 };
 
-
-// Destructor
-Demo::~Demo()
-{
-};
-
-// Get singleton instance
-Demo* Demo::privGetInstance()
-{
-	// Singleton storage
-	static Demo Instance;
-	return &Instance;
-};
-
-void Demo::privRotateCamera(const float elapsedTime)
-{
-	// Check whether right mouse button is pressed
-	short rmb = GetKeyState(VK_RBUTTON);
-	bool rmbPressed = (rmb & 0x80) != 0;
-
-	// Get mouse position
-	POINT cursorPos;
-	GetCursorPos(&cursorPos);
-	int xPos = (int)cursorPos.x;
-	int yPos = (int)cursorPos.y;
-
-	// Get window coordinates
-	RECT winSize;
-	GetWindowRect(this->window, &winSize);
-
-	static float mouseXPos = 0.0f, mouseYPos = 0.0f;
-	static float mouseXPosLast = 0.0f, mouseYPosLast = 0.0f;
-
-	mouseXPos = float(xPos - winSize.left) / float(winSize.right - winSize.left);
-	mouseYPos = float(yPos - winSize.top) / float(winSize.bottom - winSize.top);
-
-	crosshairX.position[0] = crosshairY.position[0] = (mouseXPos - 0.5f) * 2.0f;
-	crosshairX.position[1] = crosshairY.position[1] = -(mouseYPos - 0.5f) * 2.0f;
-
-	float mouseXMovement = mouseXPos - mouseXPosLast;
-	float mouseYMovement = mouseYPos - mouseYPosLast;
-
-	mouseXPosLast = mouseXPos;
-	mouseYPosLast = mouseYPos;
-
-	// Now we need to rotate the camera if right key is pressed
-	if (rmbPressed)
-	{
-		float rotDist = 90.0f * MATH_PI / 180.0f;
-		//this->cam.rotateXLocal(rotDist * -mouseYMovement);
-		//this->cam.rotateYGlobal(rotDist * -mouseXMovement);
-	}
-
-	this->cam.updateCamera();
-};
-
-void Demo::privFireBullet(const float elapsedTime)
-{
-	// Delay between shots
-	const float waitTime = 2.0f;
-	
-	static float currTime = waitTime;
-	currTime += elapsedTime;
-
-	// Check whether left mouse button is pressed
-	short lmb = GetKeyState(VK_LBUTTON);
-	bool lmbPressed = (lmb & 0x80) != 0;
-
-	// Fire if button is pressed and the wait time has elapsed
-	if (lmbPressed && (!bullet.active || currTime >= waitTime))
-	{
-		// Need to figure out our target
-		float width = cam.nearWidth + (cam.farWidth - cam.nearWidth) * (490.0f - cam.nearDist) / (cam.farDist - cam.nearDist);
-		float height = cam.nearHeight + (cam.farHeight - cam.nearHeight) * (490.0f - cam.nearDist) / (cam.farDist - cam.nearDist);
-
-		Vect target;
-		target[0] = crosshairX.position[0] * 0.5f * width;
-		target[1] = crosshairX.position[1] * 0.5f * height + 50.0f;
-		target[2] = -490.0f;
-		target[3] = 1.0f;
-
-		currTime = 0.0f;
-		//this->bullet.position = Vect(0.0f, 0.0f, 0.0f);
-		this->bullet.position = this->cam.vPos;
-		//this->bullet.velocity = this->cam.vDir * -1000.0f;
-		this->bullet.velocity = target - this->bullet.position;
-		this->bullet.velocity.norm();
-		this->bullet.velocity *= 1000.0f;
-		this->bullet.rotation = Quat(0.0f, 0.0f, 0.0f, 1.0f);
-		this->bullet.angVelocity = Vect(0.0f, 0.0f, 0.0f);
-		this->bullet.active = 1;
-		this->bullet.gravityNow = false;
-	}
-}
-
-void Demo::privCheckCollisions(const float timeIn)
-{
-	PhysicsContact contact;
-	contact.Reset();
-
-	// Check bullet and ground
-	if (CheckColliding(ground, bullet, contact))
-	{
-		contact.CalculateData(timeIn);
-		contact.ChangeVelocity();
-		contact.ChangePosition();
-		contact.Reset();
-	}
-
-
-	int blah = 0;
-	blah++;
-
-	// Check all bricks against ground
-	for (int i = 0; i < NUM_BRICKS; i++)
-	{ 
-		//if (CheckColliding(ground, bricks[i], contact))
-		if (CheckColliding(bricks[i], ground, contact))
-		{
-			contact.CalculateData(timeIn);
-			contact.ChangeVelocity();
-			contact.ChangePosition();
-			contact.Reset();
-		}
-	}
-
-	int blah2 = 0;
-	blah2++;
-
-	// Check all bricks against bullet
-	for (int i = 0; i < NUM_BRICKS; i++)
-	{ 
-		if (CheckColliding(bullet, bricks[i], contact))
-		{
-			contact.CalculateData(timeIn);
-			/*
-			contact.ChangeVelocity();
-			contact.ChangePosition();
-			bullet.gravityNow = true;
-			*/
-
-#if 0
-			Vect velocityChange(0.0f, 200.0f, 0.0f);
-			bricks[i].velocity += velocityChange;
-
-			static int x = 987444303;
-			srand(x);
-			x += 5134;
-
-			Vect angVelocityChange(0.0f, 0.0f, 0.0f);
-			angVelocityChange[0] = (float)(rand() % 60 - 30);
-			angVelocityChange[1] = (float)(rand() % 60 - 30);
-			angVelocityChange[2] = (float)(rand() % 60 - 30);
-
-			bricks[i].angVelocity += angVelocityChange;
-#else
-			// Time to have some fun with all blocks within certain distance of this collision
-			for (int k = 0; k < NUM_BRICKS; k++)
-			{
-				Vect diffPos = bricks[k].position - contact.contactPoint;
-				float magSquared = diffPos.magSqr();
-				
-				if (magSquared < 1500.0f && bricks[k].position[1] >= bricks[i].position[1])
-				{
-					Vect velocityChange(diffPos[0] > 0 ? 30.0f : -30.0f, 200.0f, 0.0f);
-					bricks[k].velocity += velocityChange;
-
-					static int x = 987444303;
-					srand(x);
-					x += 5134;
-
-					Vect angVelocityChange(0.0f, 0.0f, 0.0f);
-					angVelocityChange[0] = (float)(rand() % 60 - 30);
-					angVelocityChange[1] = (float)(rand() % 60 - 30);
-					angVelocityChange[2] = (float)(rand() % 60 - 30);
-
-					bricks[k].angVelocity += angVelocityChange;
-				}
-			}
-#endif
-
-			if (!this->timeSlowed)
-			{
-				this->slowTimer = 0.0f;
-				this->timeSlowed = true;
-				this->motionBlur.blurOn = true;
-			}
-			contact.Reset();
-			bullet.active = false;
-			break;
-		}
-	}
-
-	// Now check all bricks with each other
-	for (int i = 0; i < NUM_BRICKS; i++)
-	{
-		for (int j = i + 1; j < NUM_BRICKS; j++)
-		{
-			if (CheckColliding(bricks[i], bricks[j], contact))
-			{
-				contact.CalculateData(timeIn);
-				contact.ChangeVelocity();
-				contact.ChangePosition();
-				contact.Reset();
-			}
-		}
-	}
-
-	return;
-};
-
-void Demo::privCheckSlowTime(const float elapsedTime)
-{
-	if (!this->timeSlowed) return;
-
-	slowTimer += elapsedTime;
-	if (slowTimer > 6.0f)
-	{
-		slowTimer = 0.0f;
-		timeSlowed = false;
-		motionBlur.blurOn = false;
-	}
-}
-
+// Get D3D device
 ID3D11Device* Demo::GetDevice()
 {
 	Demo* pDemo = Demo::privGetInstance();
 	return pDemo->device;
 };
 
+// Get D3D device context
 ID3D11DeviceContext* Demo::GetDeviceContext()
 {
 	Demo* pDemo = Demo::privGetInstance();
 	return pDemo->deviceCon;
 };
 
+// Get back buffer
 ID3D11Texture2D* Demo::GetBackBuffer()
 {
 	Demo* pDemo = Demo::privGetInstance();
 	return pDemo->backBuffer;
 }
 
+// Get render target view for back buffer
 ID3D11RenderTargetView* Demo::GetBackBufferView()
 {
 	Demo* pDemo = Demo::privGetInstance();
 	return pDemo->backBufferView;
 }
 
+// Get view for depth texture
 ID3D11DepthStencilView* Demo::GetDepthView()
 {
 	Demo* pDemo = Demo::privGetInstance();
 	return pDemo->depthView;
 }
 
+// Get handle for window
 HWND Demo::GetWindow()
 {
 	Demo* pDemo = Demo::privGetInstance();
 	return pDemo->window;
 };
 
+// Get our camera
 Camera* Demo::GetCamera()
 {
 	Demo* pDemo = Demo::privGetInstance();
 	return &pDemo->cam;
 }
 
+// Set modelview matrix (and push to shader)
 void Demo::SetModelView(const Matrix& mvIn)
 {
 	// Grab instance
@@ -350,6 +333,8 @@ void Demo::SetModelView(const Matrix& mvIn)
 	pDemo->deviceCon->UpdateSubresource(pDemo->modelViewBuffer, 0, nullptr, &pDemo->modelView, 0, 0);
 }
 
+// Set color info (and push to shader)
+// (each block drawn with constant color)
 void Demo::SetColorInfo(const Vect& colorIn)
 {
 	// Grab instance
@@ -377,8 +362,38 @@ void Demo::Initialize(HINSTANCE hInstance, int nCmdShow)
 	// initialize motion blur
 	pDemo->motionBlur.initialize(200);
 	pDemo->motionBlur.setBlurTime(0.5f);
+
+	// Set up camera
+	pDemo->cam.setViewport(0, 0, GAME_WIDTH, GAME_HEIGHT);
+	pDemo->cam.setPerspective(35.0f, float(GAME_WIDTH) / float(GAME_HEIGHT), 1.0f, 4500.0f);
+	pDemo->cam.setOrientAndPosition(Vect(0.0f, 1.0f, 0.0f), Vect(0.0f, 50.0f, -10.0f), Vect(0.0f, 50.0f, 0.0f));
+	pDemo->cam.updateCamera();
+	pDemo->projection = pDemo->cam.getProjMatrix();
+	pDemo->projection.T();
+	pDemo->deviceCon->UpdateSubresource(pDemo->projectionBuffer, 0, nullptr, &pDemo->projection, 0, 0);
+
+	// Set up Lighting
+	Vect lightDir(20.0f, 100.0f, 100.0f);
+	lightDir.norm();
+	Vect lightColor(1.0f, 1.0f, 1.0f, 1.0f);
+	pDemo->lightInfo.color = lightColor;
+	pDemo->lightInfo.direction = lightDir;
+	pDemo->globalLightDir = lightDir;
+	pDemo->deviceCon->UpdateSubresource(pDemo->lightBuffer, 0, nullptr, &pDemo->lightInfo, 0, 0);
 };
 
+void Demo::Shutdown()
+{
+	Demo* p = Demo::privGetInstance();
+
+	// Destroy everything
+	p->motionBlur.destroy();
+	p->privDestroyBuffers();
+	p->privDestroyShader();
+	p->privShutDownDevice();
+}
+
+// Update the demo
 void Demo::Update()
 {
 	Demo* pDemo = Demo::privGetInstance();
@@ -398,46 +413,54 @@ void Demo::Update()
 	// First check to see if time is slowed
 	pDemo->privCheckSlowTime(elapsedTime);
 
+	// Move at one tenth speed if so
 	if (pDemo->timeSlowed)
 	{
 		elapsedTime *= 0.10f;
 	}
 
-	// Rotate camera
-	pDemo->privRotateCamera(elapsedTime);
+	// Adjust crosshair position
+	pDemo->privMoveCrosshairs(elapsedTime);
+	
+	// Fire bullet
 	pDemo->privFireBullet(elapsedTime);
 
+	// update our bullet
 	pDemo->bullet.Update(elapsedTime);
 
+	// update our bricks
 	for (int i = 0; i < NUM_BRICKS; i++)
 	{
 		pDemo->bricks[i].Update(elapsedTime);
 	}
 
+	// Check for any collisions and handle them
 	pDemo->privCheckCollisions(elapsedTime);
 
-	Vect brickPos[NUM_BRICKS];
-	for (int i = 0; i < NUM_BRICKS; i++)
-	{
-		brickPos[i] = pDemo->bricks[i].position;
-	}
+	// Check if space bar is pressed 
+	// If so reset the demo
+	short space = GetKeyState(0x20);
+	bool spacePressed = (space & 0x80) != 0;
+
+	if (spacePressed) pDemo->privReset();
 };
 
+// Draw our demo
 void Demo::Draw()
 {
 	Demo* pDemo = Demo::privGetInstance();
 	UNUSED(pDemo);
 
-	// Clear background
+	// Clear background for our back buffer and the render texture of motion blur
 	float color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	pDemo->deviceCon->ClearRenderTargetView(pDemo->motionBlur.mainRenderView, (const float*)&color[0]);
 	pDemo->deviceCon->ClearRenderTargetView(pDemo->backBufferView, (const float*)&color[0]);
 
-	// Clear the depth buffer to 1.0 (max depth)
+	// Clear the depth buffer to 1.0 (max depth) (for ours and motion blur)
 	pDemo->deviceCon->ClearDepthStencilView(pDemo->motionBlur.depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	pDemo->deviceCon->ClearDepthStencilView(pDemo->depthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	// Set our render target
+	// Set our render target - we draw everything to motion blur's render target
 	pDemo->deviceCon->OMSetRenderTargets(1, &pDemo->motionBlur.mainRenderView, pDemo->motionBlur.depthView);
 
 	// Set our shaders as active
@@ -468,11 +491,15 @@ void Demo::Draw()
 	pDemo->lightInfo.direction = pDemo->globalLightDir * rotView;
 	pDemo->deviceCon->UpdateSubresource(pDemo->lightBuffer, 0, nullptr, &pDemo->lightInfo, 0, 0);
 
+	// Update projection matrix
+	// Shouldn't be necessary anymore since camera not moving, but I'll leave it
 	Matrix proj = pDemo->cam.getProjMatrix();
 	pDemo->deviceCon->UpdateSubresource(pDemo->projectionBuffer, 0, nullptr, &proj, 0, 0);
 
+	// Draw the ground
 	pDemo->ground.Draw();
 
+	// Draw our bricks
 	for (int i = 0; i < NUM_BRICKS; i++)
 	{
 		pDemo->bricks[i].Draw();
@@ -486,15 +513,18 @@ void Demo::Draw()
 	pDemo->lightInfo.direction = Vect(0.0f, 0.0f, 1.0f);
 	pDemo->deviceCon->UpdateSubresource(pDemo->lightBuffer, 0, nullptr, &pDemo->lightInfo, 0, 0);
 	
-	// Draw crosshairs
+	// Don't need projection matrix for drawing crosshairs
 	proj.setIdentity();
 	pDemo->deviceCon->UpdateSubresource(pDemo->projectionBuffer, 0, nullptr, &proj, 0, 0);
 	
+	// Draw crosshairs
 	pDemo->crosshairX.Draw();
 	pDemo->crosshairY.Draw();
 
+	// Now call motionblur.draw, which will draw a combination of frames to the back buffer
 	pDemo->motionBlur.draw();
 
+	// Present
 	pDemo->swapChain->Present(0, 0);
 };
 
@@ -504,26 +534,9 @@ void Demo::Run()
 	// Get the instance
 	Demo *p = Demo::privGetInstance();
 
-	// Set up camera
-	p->cam.setViewport(0, 0, GAME_WIDTH, GAME_HEIGHT);
-	p->cam.setPerspective(35.0f, float(GAME_WIDTH) / float(GAME_HEIGHT), 1.0f, 4500.0f);
-	p->cam.setOrientAndPosition(Vect(0.0f, 1.0f, 0.0f), Vect(0.0f, 50.0f, -10.0f), Vect(0.0f, 50.0f, 0.0f));
-	p->cam.updateCamera();
-	p->projection = p->cam.getProjMatrix();
-	p->projection.T();
-	p->deviceCon->UpdateSubresource(p->projectionBuffer, 0, nullptr, &p->projection, 0, 0);
-
-	// Set up Lighting
-	Vect lightDir(20.0f, 100.0f, 100.0f);
-	//Vect lightDir(0.0f, 100.0f, 0.0f);
-	lightDir.norm();
-	Vect lightColor(1.0f, 1.0f, 1.0f, 1.0f);
-	p->lightInfo.color = lightColor;
-	p->lightInfo.direction = lightDir;
-	p->globalLightDir = lightDir;
-	p->deviceCon->UpdateSubresource(p->lightBuffer, 0, nullptr, &p->lightInfo, 0, 0);
-
 	p->running = true;
+
+	p->privReset();
 
 	// Main message loop
 	MSG msg = { 0 };
@@ -552,11 +565,6 @@ void Demo::Run()
 			p->Draw();
 		}
 	}
-
-	p->motionBlur.destroy();
-	p->privDestroyBuffers();
-	p->privDestroyShader();
-	p->privShutDownDevice();
 };
 
 // Quit
@@ -812,13 +820,16 @@ void Demo::privShutDownDevice()
 
 	// close and release all existing D3D objects
 	if (backBufferView) backBufferView->Release(); backBufferView = 0;
+	if (backBuffer) backBuffer->Release(); backBuffer = 0;
 	if (depthView) depthView->Release(); depthView = 0;
 	if (depthTexture) depthTexture->Release(); depthTexture = 0;
 	if (swapChain) swapChain->Release(); swapChain = 0;
+	if (sampler) sampler->Release(); sampler = 0;
 	if (device) device->Release(); device = 0;
 	if (deviceCon) deviceCon->Release(); deviceCon = 0;
 };
 
+// Create our shaders
 void Demo::privCreateShader()
 {
 	ID3DBlob* vShaderBlob = 0;
@@ -940,6 +951,7 @@ void Demo::privCreateShader()
 	deviceCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 };
 
+// Destroy our shaders and associated data
 void Demo::privDestroyShader()
 {
 	if (rastState != 0) { rastState->Release(); rastState = 0; }
@@ -948,6 +960,9 @@ void Demo::privDestroyShader()
 	if (pShader != 0) { pShader->Release(); pShader = 0; }
 }
 
+// Create the necessary buffers
+// Constant buffers needed for shaders (matrices/lighting info)
+// And vertex and index buffers for our blocks
 void Demo::privCreateBuffers()
 {
 	// CONSTANT BUFFERS ------------------------------------------------------------
@@ -1009,6 +1024,9 @@ void Demo::privCreateBuffers()
 
 	// VERT AND INDEX BUFFERS ------------------------------------------------------
 	// -----------------------------------------------------------------------------
+
+	// Simple cube mesh I created by hand
+	// with normals for lighting
 	struct Triangle
 	{
 		unsigned int vx;
@@ -1290,6 +1308,7 @@ void Demo::privCreateBuffers()
 	deviceCon->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 };
 
+// Destroy the buffers we created
 void Demo::privDestroyBuffers()
 {
 	// Delete constant buffers

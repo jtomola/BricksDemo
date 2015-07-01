@@ -20,6 +20,7 @@ public:
 	~Demo();
 
 	static void Initialize(HINSTANCE hInstance, int nCmdShow);
+	static void Shutdown();
 
 	static void Run();
 	static void Update();
@@ -34,6 +35,7 @@ public:
 	static HWND GetWindow();
 	static Camera* GetCamera();
 
+	// Set info to pass to shaders
 	static void SetModelView(const Matrix& mvIn);
 	static void SetColorInfo(const Vect& colorIn);
 
@@ -42,35 +44,46 @@ public:
 private:
 	// Make this a singleton
 	static Demo *privGetInstance();
-
-	void privRotateCamera(const float elapsedTime);
+	
+	// Helper functions
+	void privMoveCrosshairs(const float elapsedTime);
 	void privFireBullet(const float elapsedTime);
 	void privCheckCollisions(const float elapsedTime);
 	void privCheckSlowTime(const float elapsedTime);
+	void privReset();
 
+	// Set up window and Direct3D
 	HWND privCreateGraphicsWindow(HINSTANCE hInstance, int nCmdShow, const char* windowName, const int Width, const int Height);
 	void privInitDevice();
 	void privShutDownDevice();
 
+	// Create and destroy shaders
 	void privCreateShader();
 	void privDestroyShader();
 
+	// Create and destroy buffers
 	void privCreateBuffers();
 	void privDestroyBuffers();
 
+	// Struct with light info to pass to shaders
 	struct LightStruct
 	{
 		Vect direction;
 		Vect color;
 	};
 
-	Camera						cam;
+	// Camera and motion blur
+	Camera						cam; 
 	MotionBlur					motionBlur;
+
+	// Our physics objects
 	Block						ground;
 	Block						bricks[NUM_BRICKS];
+	Block						bullet;
+
+	// Crosshairs
 	Crosshair					crosshairX;
 	Crosshair					crosshairY;
-	Block						bullet;
 
 	// Window and D3D device info
 	HWND						window;
@@ -99,7 +112,7 @@ private:
 	ID3D11Buffer*				indexBuffer;
 
 	// Sampler state - needed for motion blur textures
-	ID3D11SamplerState*		sampler;
+	ID3D11SamplerState*			sampler;
 
 	// Data for constant buffers
 	Matrix						modelView;
@@ -108,8 +121,8 @@ private:
 	Vect						globalLightDir;
 	Vect						color;
 
+	// Variables to see if running, and if time is currently slowed
 	float						slowTimer;
-
 	bool						running;
 	bool						timeSlowed;
 };
